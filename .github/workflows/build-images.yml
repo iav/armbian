@@ -95,7 +95,7 @@ jobs:
       - run: |
           echo "not empty" > changes
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         if: ${{ github.repository_owner == 'Armbian' && github.event.inputs.choice != 'stable'  && github.event.inputs.choice != 'rc' }}
         with:
           fetch-depth: 1
@@ -147,7 +147,7 @@ jobs:
           echo "Branch: ${{ github.event.inputs.branch }}"
           echo "Version: ${{ needs.fake.outputs.version }}"
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v3.5.3
         if: ${{ github.repository_owner == 'Armbian' && github.event.inputs.choice != 'stable'  && github.event.inputs.choice != 'rc' }}
         with:
           fetch-depth: 1
@@ -493,7 +493,7 @@ jobs:
         uses: armbian/actions/runner-prepare@main
 
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v3.5.3
         with:
           fetch-depth: 1
           ref: nightly
