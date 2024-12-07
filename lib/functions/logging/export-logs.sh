@@ -174,7 +174,7 @@ function export_ansi_logs() {
 		if [[ "${SHARE_LOG:-"no"}" == "yes" ]]; then
 			display_alert "SHARE_LOG=yes, uploading log" "uploading logs" "info"
 			declare logs_url="undetermined"
-			logs_url=$(curl --silent --data-binary "@${target_relative_to_src}" "${paste_url}" | xargs echo -n || true) # don't fail
+			logs_url=$(curl --silent --fail --data-binary "@${target_relative_to_src}" "${paste_url}" | xargs echo -n || true) # don't fail
 			display_alert "Log uploaded, share URL:" "${logs_url}" ""
 			# set output for GitHub Actions
 			github_actions_add_output logs_url "${logs_url}"
