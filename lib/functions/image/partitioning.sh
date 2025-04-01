@@ -244,7 +244,7 @@ function prepare_partitions() {
 		display_alert "Partitioning with the following options" "$partition_script_output" "debug"
 		echo "${partition_script_output}" | run_host_command_logged sfdisk "${SDCARD}".raw || exit_with_error "Partitioning failed!"
 	fi
-	
+
 	call_extension_method "post_create_partitions" <<- 'POST_CREATE_PARTITIONS'
 		*called after all partitions are created, but not yet formatted*
 	POST_CREATE_PARTITIONS
@@ -314,7 +314,19 @@ function prepare_partitions() {
 			echo "$CRYPTROOT_MAPPER UUID=${physical_root_part_uuid} none luks" >> $SDCARD/etc/crypttab
 			run_host_command_logged cat $SDCARD/etc/crypttab
 		fi
-		
+
+		if [[ $ROOTFS_TYPE == btrfs ]]; then
+			mountopts[$ROOTFS_TYPE]=',commit=120,subvol=@'
+			run_host_command_logged btrfs subvolume create $MOUNT/@
+			# getting the subvolume id of the newly created volume @ to install it
+			# as the default volume for mounting without explicit reference
+			run_host_command_logged btrfs subvolume list /mnt | grep 'path @' | cut -d' ' -f2 \
+				| sudo xargs -I{} btrfs subvolume set-default {} $MOUNT/
+			run_host_command_logged umount $rootdevice
+			display_alert "Remounting rootfs" "$rootdevice (UUID=${ROOT_PART_UUID})"
+			run_host_command_logged mount -odefaults,noatime${mountopts[$ROOTFS_TYPE]} $rootdevice $MOUNT/
+		fi
+
 		rootfs="UUID=$(blkid -s UUID -o value $rootdevice)"
 		echo "$rootfs / ${mkfs[$ROOTFS_TYPE]} defaults,noatime${mountopts[$ROOTFS_TYPE]} 0 1" >> $SDCARD/etc/fstab
 		run_host_command_logged cat $SDCARD/etc/fstab
