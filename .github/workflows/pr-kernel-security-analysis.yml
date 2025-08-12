@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -37,7 +37,7 @@ jobs:
         uses: tj-actions/changed-files@6abeaa506a419f85fa9e681260b443adbeebb3d4 # v46.0.3
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: a13xp0p0v/kconfig-hardened-check
           path: kconfig-hardened-check
