@@ -1,0 +1,38 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Codex Bot <bot@example.com>
+Date: Thu, 6 Mar 2025 00:00:00 +0000
+Subject: [PATCH] rk3399: add Helios64 target
+
+Wire Helios64 into the rk3399 board menu and source tree so its defconfig
+builds again on v2026.01-rc5.
+
+---
+ arch/arm/mach-rockchip/rk3399/Kconfig | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/arch/arm/mach-rockchip/rk3399/Kconfig b/arch/arm/mach-rockchip/rk3399/Kconfig
+index 39e5b0548d..2b5e169acd 100644
+--- a/arch/arm/mach-rockchip/rk3399/Kconfig
++++ b/arch/arm/mach-rockchip/rk3399/Kconfig
+@@ -130,6 +130,13 @@
+ 	   * wide voltage input(5V-15V), dual cell battery
+ 	   * Wifi/BT accessible via expansion board M.2
+ 
++config TARGET_HELIOS64
++	bool "Kobol Helios64"
++	help
++	  Helios64 is a RK3399-based NAS board with a JMB585 SATA HBA,
++	  USB-C (DP Alt), USB3 hub, dual Ethernet (1G + 2.5G), eMMC and
++	  LPDDR4 memory.
++
+ endchoice
+ 
+ config ROCKCHIP_BOOT_MODE_REG
+@@ -166,6 +173,7 @@
+ source "board/pine64/pinephone-pro-rk3399/Kconfig"
+ source "board/pine64/rockpro64_rk3399/Kconfig"
+ source "board/radxa/rockpi4-rk3399/Kconfig"
++source "board/kobol/helios64/Kconfig"
+ source "board/rockchip/evb_rk3399/Kconfig"
+ source "board/theobroma-systems/puma_rk3399/Kconfig"
+ source "board/vamrs/rock960_rk3399/Kconfig"

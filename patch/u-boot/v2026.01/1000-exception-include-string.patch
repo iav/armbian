@@ -1,0 +1,25 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Codex Bot <bot@example.com>
+Date: Thu, 6 Mar 2025 00:00:00 +0000
+Subject: [PATCH] exception: include string.h for strlen/strncmp prototypes
+
+Implicit declarations are treated as errors with current toolchains.
+Add the missing header to provide prototypes for strlen/strncmp.
+
+---
+ include/exception.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/exception.h b/include/exception.h
+index 9d9c68e98b..e8a0f2e2b7 100644
+--- a/include/exception.h
++++ b/include/exception.h
+@@
+ #ifndef __EXCEPTION_H
+ #define __EXCEPTION_H
+ 
++#include <string.h>
+ #include <errno.h>
+ 
+ #ifdef CONFIG_CMD_EXCEPTION
+ void exception_init(void);

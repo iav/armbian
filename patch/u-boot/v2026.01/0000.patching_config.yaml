@@ -4,3 +4,9 @@ config:
     - { source: "defconfig", target: "configs" } # copies all files in defconfig dir to the configs/ dir in the u-boot source tree
     - { source: "dt_upstream_rockchip", target: "dts/upstream/src/arm64/rockchip" } # copies all files in dt_upstream_rockchip dir to the dts/upstream/src/arm64/rockchip dir in the u-boot source tree
     - { source: "dt_uboot", target: "arch/arm/dts" } # copies all files in dt_uboot dir to the arch/arm/dts dir in the u-boot source tree
+    - { source: "board", target: "board" } # copies board-specific sources (legacy empty dir)
+    - { source: "board_helios64/board", target: "board/kobol/helios64" } # helios64 board sources
+    - { source: "board_helios64/dt_upstream_rockchip", target: "dts/upstream/src/arm64/rockchip" } # helios64 upstream DTS
+    - { source: "board_helios64/dt_uboot", target: "arch/arm/dts" } # helios64 u-boot DTS overlay
+    - { source: "board_helios64/defconfig", target: "configs" } # helios64 defconfig
+    - { source: "board_helios64/include", target: "include" } # helios64 headers such as include/configs/*
