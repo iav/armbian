@@ -1,3 +1,14 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Codex Bot <bot@example.com>
+Date: Thu, 25 Dec 2025 00:00:00 +0000
+Subject: [PATCH] rk3399: helios64: add TPL DDR debug prints and skip freq sel
+
+Add verbose logging around rk3399 TPL DDR bring-up so we can see how far
+Helios64 progresses before failure. While debugging, skip the frequency
+selection write that hangs on this board.
+
+diff --git a/drivers/ram/rockchip/sdram_rk3399.c b/drivers/ram/rockchip/sdram_rk3399.c
+index 0f6ff53d55..ffffffffffff 100644
 --- a/drivers/ram/rockchip/sdram_rk3399.c
 +++ b/drivers/ram/rockchip/sdram_rk3399.c
 @@ -906,6 +906,9 @@
@@ -72,7 +83,7 @@
  	}
  
  	sdram_copy_to_reg(&denali_phy[896], &params_phy[896], (958 - 895) * 4);
-@@ -986,15 +1003,29 @@
+@@ -986,15 +1003,24 @@
  			  (677 - 640 + 1) * 4);
  	sdram_copy_to_reg(&denali_phy[768], &params_phy[768],
  			  (805 - 768 + 1) * 4);
@@ -100,7 +111,7 @@
  
  	writel(params->phy_regs.denali_phy[83] + (0x10 << 16),
  	       &denali_phy[83]);
-@@ -1012,6 +1043,8 @@
+@@ -1012,6 +1038,8 @@
  	       &denali_phy[467]);
  	writel(params->phy_regs.denali_phy[468] + (0x10 << 8),
  	       &denali_phy[468]);
@@ -109,7 +120,7 @@
  
  	if (params->base.dramtype == LPDDR4) {
  		/*
-@@ -1034,6 +1067,9 @@
+@@ -1034,6 +1062,9 @@
  					(PHY_DRV_ODT_240 << 0x4));
  	}
  
@@ -119,7 +130,7 @@
  	return 0;
  }
  
-@@ -2915,6 +2951,8 @@
+@@ -2915,6 +2946,8 @@
  	int channel, ch, rank;
  	u32 tmp, ret;
  
@@ -128,7 +139,7 @@
  	debug("Starting SDRAM initialization...\n");
  
  	if ((dramtype == DDR3 && ddr_freq > 933) ||
-@@ -2926,21 +2964,34 @@
+@@ -2926,21 +2959,34 @@
  
  	/* detect rank */
  	for (ch = 0; ch < 2; ch++) {
@@ -163,7 +174,7 @@
  
  			/* LPDDR2/LPDDR3 need to wait DAI complete, max 10us */
  			if (dramtype == LPDDR3)
-@@ -2951,6 +3002,7 @@
+@@ -2951,6 +2997,7 @@
  				    params->base.dramtype);
  			params->ch[ch].cap_info.rank = rank;
  
@@ -171,7 +182,7 @@
  			ret = dram->ops->data_training_first(dram, ch,
  							     rank, params);
  			if (!ret) {
-@@ -2962,6 +3014,7 @@
+@@ -2962,6 +3009,7 @@
  		/* Computed rank with associated channel number */
  		params->ch[ch].cap_info.rank = rank;
  	}
@@ -179,7 +190,7 @@
  
  #if defined(CONFIG_RAM_ROCKCHIP_LPDDR4)
  	/* LPDDR4 needs to be trained at 400MHz */
-@@ -3008,6 +3061,7 @@
+@@ -3008,6 +3056,7 @@
  		set_ddrconfig(chan, params, channel, cap_info->ddrconfig);
  		set_cap_relate_config(chan, params, channel);
  	}
@@ -187,7 +198,7 @@
  
  	if (params->base.num_channels == 0) {
  		printf("%s: ", __func__);
-@@ -3015,6 +3069,7 @@
+@@ -3015,6 +3064,7 @@
  		printf(" - %dMHz failed!\n", params->base.ddr_freq);
  		return -EINVAL;
  	}
@@ -195,7 +206,7 @@
  
  	params->base.stride = calculate_stride(params);
  	dram_all_config(dram, params);
-@@ -3022,8 +3077,10 @@
+@@ -3022,8 +3072,10 @@
  	ret = dram->ops->set_rate_index(dram, params, 1);
  	if (ret)
  		return ret;
@@ -206,3 +217,5 @@
  	return 0;
  }
  
+-- 
+2.34.1
