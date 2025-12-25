@@ -1,0 +1,61 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Armbian Bot <armbian@localhost>
+Date: Wed, 25 Dec 2025 00:00:00 +0000
+Subject: [PATCH] helios64: add coarse debug prints in rk3399 sdram init
+
+Dump markers in TPL SDRAM init to pinpoint where Helios64 gets stuck.
+
+Signed-off-by: Armbian Bot <armbian@localhost>
+---
+ drivers/ram/rockchip/sdram_rk3399.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/ram/rockchip/sdram_rk3399.c b/drivers/ram/rockchip/sdram_rk3399.c
+index 1111111111..2222222222 100644
+--- a/drivers/ram/rockchip/sdram_rk3399.c
++++ b/drivers/ram/rockchip/sdram_rk3399.c
+@@
+ int sdram_init(struct dram_info *dram,
+ 	       struct rk3399_sdram_params *params)
+ {
++	puts("RK3399: sdram_init: start\n");
+ 	/* ddrc init */
+ 	set_ddrc_timing(&dram->ddrclk, &dram->msch,
+ 			&params->ch[0].ddrconfig, &params->ch[0].ddr_timing);
++	puts("RK3399: sdram_init: timing set\n");
+ 
+ 	/* rank1 training first, start from powerup setp */
+ 	if (params->ch[0].rank == 2) {
++		puts("RK3399: sdram_init: rank1 training\n");
+ 		if (data_training(&dram->denali_phy[0], &dram->ddrgrf,
+ 				  &dram->pmugrf, params, PI_START))
+ 			return -EIO;
+@@
+ 	}
+ 
++	puts("RK3399: sdram_init: rank0 training\n");
+ 	if (data_training(&dram->denali_phy[0], &dram->ddrgrf,
+ 			  &dram->pmugrf, params, PI_START))
+ 		return -EIO;
++	puts("RK3399: sdram_init: ch0 done\n");
+ 
+ 	if (params->ch[1].bgs) {
++		puts("RK3399: sdram_init: ch1 start\n");
+ 		set_memory_map(&dram->map, &dram->msch, params);
+ 		if (data_training(&dram->denali_phy[1], &dram->ddrgrf,
+ 				  &dram->pmugrf, params, PI_START_1))
+ 			return -EIO;
+@@
+ 		if (params->ch[0].cap_info.col == 11)
+ 			denali_ctl_set_bits(&dram->ddrgrf,
+ 					    DDRGRF_CON6_MSCH1_MAINDDR3_11BIT);
++		puts("RK3399: sdram_init: ch1 done\n");
+ 	}
+ 
+ 	pctl_cfg(&dram->pctl[0], &dram->msch, &dram->ddrgrf, params);
++	puts("RK3399: sdram_init: cfg done\n");
+ 
+ 	return 0;
+ }
+-- 
+2.43.0
