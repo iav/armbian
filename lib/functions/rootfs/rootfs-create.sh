@@ -62,7 +62,7 @@ function create_new_rootfs_cache_via_debootstrap() {
 			local debootstrap_apt_mirror="http://localhost:3142/${APT_MIRROR}"
 			acng_check_status_or_restart
 			;;
-		no)     ;& # do nothing, fallthrough
+		no) ;& # do nothing, fallthrough
 		"")
 			:  # still do nothing
 			;; # stop falling
@@ -139,7 +139,6 @@ function create_new_rootfs_cache_via_debootstrap() {
 	}
 
 	skip_target_check="yes" local_apt_deb_cache_prepare "for mmdebstrap" # just for size reference in logs
-
 
 	[[ ! -f "${SDCARD}/bin/bash" ]] && exit_with_error "mmdebstrap did not produce /bin/bash"
 
