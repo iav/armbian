@@ -279,10 +279,10 @@ function reset_uid_owner() {
 	for arg in "$@"; do
 		display_alert "reset_uid_owner: '${arg}' will be owner id '${SET_OWNER_TO_UID}'" "reset_uid_owner" "debug"
 		if [[ -d "${arg}" ]]; then
-			chown "${SET_OWNER_TO_UID}" "${arg}"
-			find "${arg}" -uid 0 -print0 | xargs --no-run-if-empty -0 chown "${SET_OWNER_TO_UID}"
+			chown -h "${SET_OWNER_TO_UID}" "${arg}"
+			find "${arg}" -uid 0 -print0 | xargs --no-run-if-empty -0 chown -h "${SET_OWNER_TO_UID}"
 		elif [[ -f "${arg}" ]]; then
-			chown "${SET_OWNER_TO_UID}" "${arg}"
+			chown -h "${SET_OWNER_TO_UID}" "${arg}"
 		else
 			display_alert "reset_uid_owner: '${arg}' is not a file or directory" "skipping" "debug"
 			return 1
@@ -300,9 +300,9 @@ function reset_uid_owner_non_recursive() {
 	for arg in "$@"; do
 		display_alert "reset_uid_owner_non_recursive: '${arg}' will be owner id '${SET_OWNER_TO_UID}'" "reset_uid_owner_non_recursive" "debug"
 		if [[ -d "${arg}" ]]; then
-			chown "${SET_OWNER_TO_UID}" "${arg}"
+			chown -h "${SET_OWNER_TO_UID}" "${arg}"
 		elif [[ -f "${arg}" ]]; then
-			chown "${SET_OWNER_TO_UID}" "${arg}"
+			chown -h "${SET_OWNER_TO_UID}" "${arg}"
 		else
 			display_alert "reset_uid_owner_non_recursive: '${arg}' is not a file or directory" "skipping" "debug"
 			return 1
