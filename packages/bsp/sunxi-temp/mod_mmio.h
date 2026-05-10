@@ -76,7 +76,7 @@ static void mmio_normalize(struct mmio *mo)
 
 	npages += (mo->range * sizeof(uint32_t)) / getpagesize();
 	npages += 1;
-	mo->iosize = npages * getpagesize();
+	mo->iosize = (size_t)npages * (size_t)getpagesize();
 }
 
 static void mmio_init(struct mmio *mo)
