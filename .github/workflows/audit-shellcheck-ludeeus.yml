@@ -1,0 +1,41 @@
+name: "Audit: Shellcheck (ludeeus)"
+run-name: "ludeeus shellcheck — ${{ inputs.repository }}@${{ inputs.ref }}"
+
+# On-demand audit. Runs ludeeus/action-shellcheck against an arbitrary public
+# repo + ref. Annotations show up in the workflow run via GitHub problem
+# matchers (gutter icons next to source lines, hover shows SC code + message).
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Target repo (owner/name). Public repos work without a token."
+        required: true
+        default: "armbian/build"
+      ref:
+        description: "Branch, tag, or commit SHA to scan."
+        required: true
+        default: "main"
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout target repo"
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: "ludeeus/action-shellcheck"
+        uses: ludeeus/action-shellcheck@master
+        with:
+          severity: warning
+          check_together: 'yes'
+          ignore_paths: >-
+            cache
+            .git

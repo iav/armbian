@@ -1,0 +1,47 @@
+name: "Audit: Shellcheck (reviewdog)"
+run-name: "reviewdog shellcheck — ${{ inputs.repository }}@${{ inputs.ref }}"
+
+# On-demand audit. Runs reviewdog/action-shellcheck against an arbitrary
+# public repo + ref. Findings appear as a check-run with annotations in the
+# workflow run; outside a PR context inline review-comments aren't possible.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repository:
+        description: "Target repo (owner/name). Public repos work without a token."
+        required: true
+        default: "armbian/build"
+      ref:
+        description: "Branch, tag, or commit SHA to scan."
+        required: true
+        default: "main"
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+jobs:
+  shellcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout target repo"
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ inputs.repository }}
+          ref: ${{ inputs.ref }}
+          persist-credentials: false
+
+      - name: "reviewdog/action-shellcheck"
+        uses: reviewdog/action-shellcheck@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # check-run annotations work for any workflow_dispatch (no PR
+          # context needed). For PR-context use 'github-pr-review' instead.
+          reporter: github-check
+          level: warning
+          fail_on_error: false
+          path: '.'
+          pattern: '*.sh'
+          exclude: './cache/* ./.git/*'
