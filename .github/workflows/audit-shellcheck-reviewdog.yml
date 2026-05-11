@@ -42,6 +42,8 @@ jobs:
           reporter: github-check
           level: warning
           fail_level: none
+          check_all_files_with_shebangs: true
+          filter_mode: nofilter
           path: '.'
           pattern: '*.sh'
           exclude: './cache/* ./.git/*'
