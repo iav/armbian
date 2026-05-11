@@ -34,7 +34,7 @@ jobs:
           persist-credentials: false
 
       - name: "reviewdog/action-shellcheck"
-        uses: reviewdog/action-shellcheck@master
+        uses: reviewdog/action-shellcheck@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # check-run annotations work for any workflow_dispatch (no PR
