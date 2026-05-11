@@ -31,6 +31,9 @@ jobs:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
+      - name: "Register shellcheck problem matcher"
+        run: echo "::add-matcher::$GITHUB_WORKSPACE/.github/shellcheck-matcher.json"
+
       - name: "Collect bash-shebang scripts (mirroring upstream filter)"
         id: collect
         run: |
@@ -45,7 +48,6 @@ jobs:
         uses: ludeeus/action-shellcheck@master
         with:
           severity: warning
-          format: tty
           check_together: 'yes'
           additional_files: ${{ steps.collect.outputs.files }}
           ignore_paths: >-
