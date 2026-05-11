@@ -44,4 +44,4 @@ jobs:
           fail_level: none
           path: '.'
           pattern: '*.sh'
-          exclude: './cache/* ./.git/*'
+          exclude: './cache/* ./.git/* ./lib/* ./extensions/* ./**/*.py ./**/*.service ./**/*.rules ./**/*.network ./**/*.netdev'
