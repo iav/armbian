@@ -1,0 +1,67 @@
+name: "Maintenance: Lint scripts (reviewdog)"
+run-name: 'Shellcheck (reviewdog) - PR #${{ github.event.pull_request.number || inputs.pr_number }} ("${{ github.event.pull_request.title }}")'
+#
+# Reviewdog-powered variant of maintenance-lint-scripts.yml. Findings appear
+# as inline review-comments on the PR diff. The framework-internal phase
+# (bash lib/tools/shellcheck.sh) still runs first so cross-file source-following
+# coverage for lib/ and extensions/ is preserved. Both workflows can coexist;
+# concurrency groups and job names are distinct.
+#
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "PR number to re-run on (head SHA is resolved; reviewdog posts inline comments on this PR)"
+        required: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  shellcheck:
+    name: runner / shellcheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve PR head (workflow_dispatch only)
+        id: pr
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pr=$(gh pr view "${{ inputs.pr_number }}" --repo "${{ github.repository }}" --json headRefOid,headRefName)
+          echo "head_sha=$(jq -r .headRefOid <<< "$pr")" >> "$GITHUB_OUTPUT"
+          echo "head_ref=$(jq -r .headRefName <<< "$pr")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ steps.pr.outputs.head_sha || '' }}
+
+      - name: Framework-aware shellcheck (lib/ + extensions/)
+        # Internal mechanism: feeds lib/ and extensions/ through shellcheck
+        # with source-following enabled, so a variable used in a different
+        # file is not flagged "unused". Outside lib/ and extensions/ the
+        # per-file inline annotations are produced by reviewdog below.
+        run: bash lib/tools/shellcheck.sh
+
+      - name: shellcheck
+        uses: reviewdog/action-shellcheck@5ebd09ddbe2ebb471646ce234c6c8dd18663ca7c # v1.30.0
+        env:
+          # On workflow_dispatch reviewdog has no native PR context; CI_*
+          # env vars prime it so github-pr-review can post on the targeted PR.
+          CI_PULL_REQUEST: ${{ inputs.pr_number }}
+          CI_COMMIT: ${{ steps.pr.outputs.head_sha }}
+          CI_REPO_OWNER: ${{ github.repository_owner }}
+          CI_REPO_NAME: ${{ github.event.repository.name }}
+        with:
+          github_token: ${{ secrets.github_token }}
+          reporter: github-pr-review
+          path: "."
+          pattern: "*.sh"
+          # Skip framework-internal trees (handled above) plus non-shell
+          # config files that may carry a shebang-looking first line.
+          exclude: "./cache/* ./.git/* ./lib/* ./**/*.py ./**/*.service ./**/*.rules ./**/*.network ./**/*.netdev"
+          check_all_files_with_shebangs: "false"
