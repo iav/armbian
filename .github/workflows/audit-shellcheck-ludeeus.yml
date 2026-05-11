@@ -31,11 +31,30 @@ jobs:
           ref: ${{ inputs.ref }}
           persist-credentials: false
 
+      - name: "Collect bash-shebang scripts (mirroring upstream filter)"
+        id: collect
+        run: |
+          files=$(find . -type f \
+            ! -path './lib/*' ! -path './extensions/*' ! -path './cache/*' ! -path './.git/*' \
+            ! -name '*.py' ! -name '*.service' ! -name '*.rules' ! -name '*.network' ! -name '*.netdev' \
+            -exec grep -lE '^#!/.*bash' {} + 2>/dev/null | tr '\n' ' ')
+          echo "files=$files" >> "$GITHUB_OUTPUT"
+          echo "$files" | tr ' ' '\n' | sed '/^$/d'
+
       - name: "ludeeus/action-shellcheck"
         uses: ludeeus/action-shellcheck@master
         with:
           severity: warning
           check_together: 'yes'
+          additional_files: ${{ steps.collect.outputs.files }}
           ignore_paths: >-
             cache
             .git
+            lib
+            extensions
+          ignore_names: >-
+            *.py
+            *.service
+            *.rules
+            *.network
+            *.netdev
