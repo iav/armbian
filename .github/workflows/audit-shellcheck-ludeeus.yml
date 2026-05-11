@@ -32,7 +32,31 @@ jobs:
           persist-credentials: false
 
       - name: "Register shellcheck problem matcher"
-        run: echo "::add-matcher::$GITHUB_WORKSPACE/.github/shellcheck-matcher.json"
+        run: |
+          # Inline matcher — checkout has overwritten the workflow's own
+          # repo with the target one, so we cannot reference an in-repo
+          # path. Drop the JSON into RUNNER_TEMP, which is unaffected.
+          cat > "$RUNNER_TEMP/shellcheck-matcher.json" <<'JSON'
+          {
+            "problemMatcher": [
+              {
+                "owner": "shellcheck-gcc",
+                "pattern": [
+                  {
+                    "regexp": "^(.+):(\\d+):(\\d+):\\s+(note|warning|error):\\s+(.*)\\s+\\[(SC\\d+)\\]$",
+                    "file": 1,
+                    "line": 2,
+                    "column": 3,
+                    "severity": 4,
+                    "message": 5,
+                    "code": 6
+                  }
+                ]
+              }
+            ]
+          }
+          JSON
+          echo "::add-matcher::$RUNNER_TEMP/shellcheck-matcher.json"
 
       - name: "Collect bash-shebang scripts (mirroring upstream filter)"
         id: collect
