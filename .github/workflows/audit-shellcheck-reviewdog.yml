@@ -41,7 +41,7 @@ jobs:
           # context needed). For PR-context use 'github-pr-review' instead.
           reporter: github-check
           level: warning
-          fail_on_error: false
+          fail_level: none
           path: '.'
           pattern: '*.sh'
           exclude: './cache/* ./.git/*'
