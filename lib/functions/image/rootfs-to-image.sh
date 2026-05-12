@@ -44,9 +44,12 @@ function create_image_from_sdcard_rootfs() {
 	# inside the build chroot is silently dropped between SDCARD and the
 	# packaged image.
 	declare rsync_ea="${ROOTFS_RSYNC_XATTR_FLAGS:- -AXS --numeric-ids }"
-	declare exclude_home="--exclude=\"/home/*\""
+	# Use an array so the value reaches rsync as one argument without embedded
+	# quote characters. The previous string form `--exclude="/home/*"` made rsync
+	# treat the literal quotes as part of the pattern and never excluded /home.
+	declare -a exclude_home=(--exclude=/home/\*)
 	# Some usecase requires home directory to be included
-	if [[ ${INCLUDE_HOME_DIR:-no} == yes ]]; then exclude_home=""; fi
+	if [[ ${INCLUDE_HOME_DIR:-no} == yes ]]; then exclude_home=(); fi
 	# nilfs2 fs does not have extended attributes support, and have to be ignored on copy
 	if [[ $ROOTFS_TYPE == nilfs2 ]]; then rsync_ea=" --numeric-ids "; fi
 	if [[ $ROOTFS_TYPE != nfs && $ROOTFS_TYPE != nfs-root ]]; then
@@ -58,7 +61,7 @@ function create_image_from_sdcard_rootfs() {
 			--exclude="/run/*" \
 			--exclude="/tmp/*" \
 			--exclude="/sys/*" \
-			$exclude_home \
+			"${exclude_home[@]}" \
 			--info=progress0,stats1 $SDCARD/ $MOUNT/
 	fi
 
@@ -200,7 +203,7 @@ function create_image_from_sdcard_rootfs() {
 				--exclude="/run/*" \
 				--exclude="/tmp/*" \
 				--exclude="/sys/*" \
-				$exclude_home \
+				"${exclude_home[@]}" \
 				--info=progress0,stats1 "$SDCARD/" "${ROOTFS_EXPORT_DIR}/"
 		fi
 
