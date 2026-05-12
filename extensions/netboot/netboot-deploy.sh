@@ -182,7 +182,24 @@ function extension_prepare_config__060_netboot_deploy_probe_target() {
 	fi
 	# shellcheck disable=SC2206 # word-split intentional, user gives a shell-style string
 	declare -a probe_cmd=(ssh -o ConnectTimeout=5 ${probe_extra} ${NETBOOT_DEPLOY_SSH_OPTS:--o BatchMode=yes})
-	[[ -n "${NETBOOT_DEPLOY_SSH_KEY:-}" ]] && probe_cmd+=(-i "${NETBOOT_DEPLOY_SSH_KEY}")
+	# Mirror the deploy hook's scratch-key dance: OpenSSH refuses identity
+	# files whose owner is neither root nor the current user, and a key
+	# bind-mounted from the host keeps the host user's ownership. Without
+	# this the probe would reject valid CI/batch credentials that the
+	# real deploy (which copies into a scratch path) handles fine. Clean
+	# up right after the probe — extension_prepare_config runs in the
+	# caller's scope, so a trap would leak.
+	declare probe_scratch_key=""
+	if [[ -n "${NETBOOT_DEPLOY_SSH_KEY:-}" ]]; then
+		if [[ ! -f "${NETBOOT_DEPLOY_SSH_KEY}" ]]; then
+			exit_with_error "${EXTENSION}: NETBOOT_DEPLOY_SSH_KEY set but not visible in container" \
+				"${NETBOOT_DEPLOY_SSH_KEY}"
+		fi
+		probe_scratch_key="$(mktemp -p /tmp "netboot-deploy-probe-key.XXXXXX")"
+		cp "${NETBOOT_DEPLOY_SSH_KEY}" "${probe_scratch_key}"
+		chmod 600 "${probe_scratch_key}"
+		probe_cmd+=(-i "${probe_scratch_key}")
+	fi
 	declare sudo_prefix=""
 	[[ "${NETBOOT_DEPLOY_SUDO:-no}" == "yes" ]] && sudo_prefix="sudo -n "
 	# Quote remote path for any POSIX shell (same idiom as the deploy hook below).
@@ -199,11 +216,11 @@ function extension_prepare_config__060_netboot_deploy_probe_target() {
 		"${sudo_prefix}touch ${q_probe} && ${sudo_prefix}rm -f ${q_probe}" 2> "${probe_stderr_file}"; then
 		declare probe_stderr
 		probe_stderr=$(head -c 4096 "${probe_stderr_file}" | sed 's/[[:space:]]*$//')
-		rm -f "${probe_stderr_file}"
+		rm -f "${probe_stderr_file}" "${probe_scratch_key}"
 		exit_with_error "${EXTENSION}: deploy probe failed" \
 			"ssh '${NETBOOT_DEPLOY_SSH}' cannot create+remove a file under '${tftp_root}'. ssh stderr: ${probe_stderr:-<empty>}. Check NETBOOT_DEPLOY_SSH_KEY, sudo NOPASSWD, target dir existence/permissions, host-key trust (NETBOOT_DEPLOY_SSH_KNOWN_HOSTS or NETBOOT_DEPLOY_SSH_TOFU). Bypass with NETBOOT_DEPLOY_PROBE=no."
 	fi
-	rm -f "${probe_stderr_file}"
+	rm -f "${probe_stderr_file}" "${probe_scratch_key}"
 }
 
 # Host-side: bind-mount the chosen private key into the build container
