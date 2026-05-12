@@ -44,16 +44,23 @@ function create_image_from_sdcard_rootfs() {
 	# inside the build chroot is silently dropped between SDCARD and the
 	# packaged image.
 	declare rsync_ea="${ROOTFS_RSYNC_XATTR_FLAGS:- -AXS --numeric-ids }"
-	# Use an array so the value reaches rsync as one argument without embedded
-	# quote characters. The previous string form `--exclude="/home/*"` made rsync
-	# treat the literal quotes as part of the pattern and never excluded /home.
-	declare -a exclude_home=(--exclude=/home/\*)
-	# Some usecase requires home directory to be included
-	if [[ ${INCLUDE_HOME_DIR:-no} == yes ]]; then exclude_home=(); fi
+	# Carry a single-quoted shell token in the variable's value so it
+	# survives `run_host_command_logged`'s `bash -c "$*"` re-parse. The
+	# previous form `--exclude="/home/*"` failed because the value was
+	# `--exclude="/home/*"` *with literal double-quotes*, which rsync
+	# treated as part of the pattern and never excluded /home. A bare
+	# array (`(--exclude=/home/*)`) doesn't help here either: the helper
+	# re-parses argv via `bash -c "$*"`, which restores the `*` as a
+	# live glob char. Single-quoted form below hides `*` from globbing
+	# at the bash -c re-parse step.
+	declare exclude_home=""
+	# shellcheck disable=SC2089 # embedded single-quotes are intentional — survive run_host_command_logged's bash -c "$*" re-parse
+	[[ "${INCLUDE_HOME_DIR:-no}" != "yes" ]] && exclude_home="'--exclude=/home/*'"
 	# nilfs2 fs does not have extended attributes support, and have to be ignored on copy
 	if [[ $ROOTFS_TYPE == nilfs2 ]]; then rsync_ea=" --numeric-ids "; fi
 	if [[ $ROOTFS_TYPE != nfs && $ROOTFS_TYPE != nfs-root ]]; then
 		display_alert "Copying files via rsync to" "/ (MOUNT root)"
+		# shellcheck disable=SC2090 # embedded single-quotes in $exclude_home are intentional — see declaration above
 		run_host_command_logged rsync -aHWh $rsync_ea \
 			--exclude="/boot" \
 			--exclude="/dev/*" \
@@ -61,7 +68,7 @@ function create_image_from_sdcard_rootfs() {
 			--exclude="/run/*" \
 			--exclude="/tmp/*" \
 			--exclude="/sys/*" \
-			"${exclude_home[@]}" \
+			$exclude_home \
 			--info=progress0,stats1 $SDCARD/ $MOUNT/
 	fi
 
@@ -196,6 +203,7 @@ function create_image_from_sdcard_rootfs() {
 			# reused export tree (otherwise the NFS root silently drifts from the image).
 			# --delete-excluded additionally purges receiver-side files that match our
 			# excludes (e.g. stale /home/* left over from a prior INCLUDE_HOME_DIR=yes build).
+			# shellcheck disable=SC2090 # embedded single-quotes in $exclude_home are intentional — see declaration above
 			run_host_command_logged rsync -aHWh --delete --delete-excluded $rsync_ea \
 				--exclude="/boot/*" \
 				--exclude="/dev/*" \
@@ -203,7 +211,7 @@ function create_image_from_sdcard_rootfs() {
 				--exclude="/run/*" \
 				--exclude="/tmp/*" \
 				--exclude="/sys/*" \
-				"${exclude_home[@]}" \
+				$exclude_home \
 				--info=progress0,stats1 "$SDCARD/" "${ROOTFS_EXPORT_DIR}/"
 		fi
 
