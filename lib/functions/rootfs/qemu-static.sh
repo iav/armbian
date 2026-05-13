@@ -216,14 +216,21 @@ function _native_armhf_setup_binfmt_elf() {
 	# builders detect us via EX-NB probe and refuse to switch qemu-arm off.
 	# Without this anchor an N-builder arriving mid-K-chroot would echo 0 and
 	# silently break K's qemu-arm-static routing.
+	#
+	# Every failure to establish the anchor must be fatal, not a warn-and-
+	# fall-through: NATIVE_ARMHF_ON_ARM64=no is an explicit opt-out, and a
+	# silent fall-through on a native-capable aarch64 host without a usable
+	# qemu-arm binfmt entry would let the kernel run the chroot armhf execs
+	# natively anyway — exactly the behavior the operator asked us to avoid.
+	# See codex P2 :222 (PR #113).
 	if [[ "${killswitch}" == "yes" ]]; then
 		if [[ ! -e /proc/sys/fs/binfmt_misc/qemu-arm ]]; then
-			display_alert "Native armhf via binfmt_elf" "killswitch requested but qemu-arm not registered; cannot anchor emulation" "wrn"
-			return 1
+			display_alert "Native armhf via binfmt_elf" "killswitch requested but qemu-arm not registered on host; cannot honor opt-out" "err"
+			exit_with_error "cannot honor NATIVE_ARMHF_ON_ARM64=no: qemu-arm binfmt entry not registered. Install qemu-user-static (or run update-binfmts --enable qemu-arm) before the build."
 		fi
 		if ! { exec {_native_armhf_emul_lock_fd}< /proc/sys/fs/binfmt_misc/qemu-arm; } 2> /dev/null; then
-			display_alert "Native armhf via binfmt_elf" "cannot open binfmt_misc/qemu-arm; killswitch cannot anchor" "wrn"
-			return 1
+			display_alert "Native armhf via binfmt_elf" "cannot open binfmt_misc/qemu-arm; killswitch cannot anchor" "err"
+			exit_with_error "cannot honor NATIVE_ARMHF_ON_ARM64=no: failed to open /proc/sys/fs/binfmt_misc/qemu-arm for SH-lock. CAP_SYS_ADMIN missing in the build container?"
 		fi
 		# Blocking SH with timeout: an N-builder's EX hold (probe / state-write
 		# / EX→SH downgrade window) is sub-millisecond, but we may collide. A
@@ -234,8 +241,8 @@ function _native_armhf_setup_binfmt_elf() {
 		if ! flock -s -w 30 "${_native_armhf_emul_lock_fd}"; then
 			exec {_native_armhf_emul_lock_fd}>&-
 			unset _native_armhf_emul_lock_fd
-			display_alert "Native armhf via binfmt_elf" "could not acquire emulation SH-lock within 30s; concurrent native-armhf transition stuck?" "wrn"
-			return 1
+			display_alert "Native armhf via binfmt_elf" "could not acquire emulation SH-lock within 30s; concurrent native-armhf transition stuck?" "err"
+			exit_with_error "cannot honor NATIVE_ARMHF_ON_ARM64=no: SH-lock on qemu-arm not granted within 30s. A concurrent native-armhf builder's EX→SH transition appears stuck; investigate or wait."
 		fi
 		# Post-SH state check: the peer's transition may have completed before
 		# our SH waiters were granted. If qemu-arm is 0, peer is now native and
