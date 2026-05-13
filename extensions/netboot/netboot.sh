@@ -393,6 +393,22 @@ function post_customize_image__netboot_skip_firstlogin_wizard() {
 	run_host_command_logged rm -f "${SDCARD}/root/.not_logged_in_yet"
 }
 
+# Suppress the update-initramfs probe warning:
+#   W: Couldn't identify type of root file system '/dev/nfs' for fsck hook
+# fsck is not applicable to NFS-mounted roots, and the warning otherwise
+# repeats on every initramfs rebuild (our own request_root_path + watchdog
+# hooks below, plus any later kernel package upgrade on the booted host).
+# Drop the snippet before the subsequent update-initramfs calls so they
+# pick it up.
+function post_customize_image__netboot_disable_initramfs_fsck() {
+	[[ "${ROOTFS_TYPE}" == "nfs-root" ]] || return 0
+
+	declare conf_d="${SDCARD}/etc/initramfs-tools/conf.d/netboot-no-fsck"
+	display_alert "${EXTENSION}: installing initramfs.conf.d snippet" "FSCKFIX=no — silence /dev/nfs fsck warning" "info"
+	run_host_command_logged install -D -m 0644 \
+		"${EXTENSION_DIR}/files/initramfs-conf.d/netboot-no-fsck" "${conf_d}"
+}
+
 # Fix ROOTSERVER in initramfs for path-only nfsroot= boots. The stock
 # 70-net-conf dhcpcd-hook sets ROOTSERVER to the default gateway (new_routers),
 # which makes /scripts/nfs in initramfs-tools mount the rootfs from the wrong
