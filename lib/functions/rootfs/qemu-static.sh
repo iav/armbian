@@ -17,30 +17,14 @@ function deploy_qemu_binary_to_chroot() {
 		return 0
 	fi
 
-	# Native armhf path is active: kernel binfmt_elf executes 32-bit ARM ELF via
-	# CONFIG_COMPAT, no qemu-arm-static needed inside the chroot.
-	if [[ "${ARMBIAN_NATIVE_ARMHF_VIA_BINFMT_ELF:-no}" == "yes" ]]; then
-		display_alert "Native armhf via binfmt_elf" "skipping qemu binary deployment during ${caller}" "info"
-		return 0
-	fi
-
-	# Source: try the historical name first (qemu-<arch>-static), fall back
-	# to the bare name shipped by Ubuntu resolute's qemu-user-binfmt package
-	# (e.g. /usr/bin/qemu-aarch64).
-	declare qemu_no_suffix="${QEMU_BINARY%-static}"
-	declare src_host=""
-	if [[ -f "/usr/bin/${QEMU_BINARY}" ]]; then
-		src_host="/usr/bin/${QEMU_BINARY}"
-	elif [[ -f "/usr/bin/${qemu_no_suffix}" ]]; then
-		src_host="/usr/bin/${qemu_no_suffix}"
-	else
-		exit_with_error "Missing qemu binary on host: tried /usr/bin/${QEMU_BINARY} and /usr/bin/${qemu_no_suffix}"
-	fi
-
-	# Destination: deploy under both names so the chroot resolves whichever
-	# path the host's binfmt registration points at — the older qemu-user-
-	# static package registers /usr/bin/qemu-<arch>-static, while resolute's
+	# Destination paths are needed regardless of which branch we take below:
+	# the native armhf fast path still has to move any package-owned qemu
+	# binary the target rootfs ships aside, so undeploy can restore it
+	# instead of treating it as our deployed copy. Deploy under both names
+	# (qemu-<arch>-static and qemu-<arch>) — the older qemu-user-static
+	# package registers /usr/bin/qemu-<arch>-static, while resolute's
 	# qemu-user-binfmt registers /usr/bin/qemu-<arch>.
+	declare qemu_no_suffix="${QEMU_BINARY%-static}"
 	declare dst_target="${chroot_target}/usr/bin/${QEMU_BINARY}"
 	declare dst_target_alt="${chroot_target}/usr/bin/${qemu_no_suffix}"
 	declare dst_target_bkp="${dst_target}.armbian.orig"
@@ -49,6 +33,13 @@ function deploy_qemu_binary_to_chroot() {
 	# Assume we're getting a clean base to work with. Namely, we count on the rootfs cache to _not_ have left a dangling binary.
 	# If the dst_target already exists, it means the target actually has the qemu-static package installed.
 	# In that case, we preserve the original binary; it will be restored by the undeploy.
+	#
+	# This block runs BEFORE the native-armhf early return: even when the
+	# kernel binfmt_elf path takes over and we never copy a host binary
+	# into the chroot, undeploy_qemu_binary_from_chroot still has to be
+	# able to tell "target's own package binary" from "our deployed host
+	# copy" and restore the former rather than rm-ing it. The .armbian.orig
+	# marker is the only signal it has.
 	if [[ -f "${dst_target}" ]]; then
 		display_alert "Preserving existing qemu binary" "${QEMU_BINARY} during ${caller}" "info"
 		run_host_command_logged mv -v "${dst_target}" "${dst_target_bkp}"
@@ -56,6 +47,28 @@ function deploy_qemu_binary_to_chroot() {
 	if [[ "${dst_target}" != "${dst_target_alt}" && -f "${dst_target_alt}" ]]; then
 		display_alert "Preserving existing qemu binary" "${qemu_no_suffix} during ${caller}" "info"
 		run_host_command_logged mv -v "${dst_target_alt}" "${dst_target_alt_bkp}"
+	fi
+
+	# Native armhf path is active: kernel binfmt_elf executes 32-bit ARM ELF via
+	# CONFIG_COMPAT, no qemu-arm-static needed inside the chroot. Preservation
+	# above already moved any target-owned copy aside.
+	if [[ "${ARMBIAN_NATIVE_ARMHF_VIA_BINFMT_ELF:-no}" == "yes" ]]; then
+		display_alert "Native armhf via binfmt_elf" "skipping qemu binary deployment during ${caller}" "info"
+		return 0
+	fi
+
+	# Source: try the historical name first (qemu-<arch>-static), fall back
+	# to the bare name shipped by Ubuntu resolute's qemu-user-binfmt package
+	# (e.g. /usr/bin/qemu-aarch64). Resolution is deferred until after the
+	# native-armhf early return — host-side qemu may be absent on a native
+	# armhf builder that intentionally has no qemu-user-static installed.
+	declare src_host=""
+	if [[ -f "/usr/bin/${QEMU_BINARY}" ]]; then
+		src_host="/usr/bin/${QEMU_BINARY}"
+	elif [[ -f "/usr/bin/${qemu_no_suffix}" ]]; then
+		src_host="/usr/bin/${qemu_no_suffix}"
+	else
+		exit_with_error "Missing qemu binary on host: tried /usr/bin/${QEMU_BINARY} and /usr/bin/${qemu_no_suffix}"
 	fi
 
 	display_alert "Deploying qemu-user-static binary to chroot" "${QEMU_BINARY} during ${caller} (from ${src_host})" "info"
@@ -83,29 +96,34 @@ function undeploy_qemu_binary_from_chroot() {
 	declare dst_target_bkp="${dst_target}.armbian.orig"
 	declare dst_target_alt_bkp="${dst_target_alt}.armbian.orig"
 
-	# Check the binary we deployed is there. Two reasons it might be missing:
-	#   1. ARMBIAN_NATIVE_ARMHF_VIA_BINFMT_ELF was active when the matching deploy
-	#      ran, so nothing was copied — graceful no-op.
-	#   2. Genuine state loss — panic, we lost control.
-	# We must NOT skip the removal solely on the native-armhf flag, because deploy
-	# may have run before that flag was set (rootfs-create deploys at line 134,
-	# native-armhf flips at line 149); skipping the undeploy in that case leaks
-	# the host's qemu-arm-static into the rootfs cache tarball.
-	if [[ ! -f "${dst_target}" ]]; then
-		if [[ "${ARMBIAN_NATIVE_ARMHF_VIA_BINFMT_ELF:-no}" == "yes" ]]; then
-			display_alert "Native armhf via binfmt_elf" "no qemu binary to remove during ${caller}" "debug"
-			return 0
-		fi
+	# Remove the binary we deployed, if any. Three scenarios for dst_target:
+	#   1. Present, deploy ran cross-arch (cp host's binary)            → rm it.
+	#   2. Present, deploy ran native-armhf and target later apt-
+	#      installed qemu-user-static itself between deploy and us      → see
+	#      TODO below; can't currently distinguish from (1), default rm.
+	#   3. Absent, deploy ran native-armhf without a target package     → skip
+	#      rm, fall through to the .orig restore.
+	#   4. Absent, native-armhf was off all along                       → genuine
+	#      state loss; exit_with_error (kept from the original code).
+	#
+	# Distinguishing host-deployed from target-installed-mid-build (scenario 2)
+	# would need an explicit marker file at deploy time; codex P2 :24 only
+	# flags the simpler case where the target binary was present before deploy,
+	# which the .orig preserve in deploy now covers.
+	if [[ -f "${dst_target}" ]]; then
+		display_alert "Removing qemu-user-static binary from chroot" "${QEMU_BINARY} during ${caller}" "info"
+		run_host_command_logged rm -fv "${dst_target}"
+	elif [[ "${ARMBIAN_NATIVE_ARMHF_VIA_BINFMT_ELF:-no}" != "yes" ]]; then
 		exit_with_error "Missing qemu binary during undeploy_qemu_binary_from_chroot from ${caller}"
 	fi
-
-	# Remove the binary we deployed, and restore the original if we had to preserve it.
-	display_alert "Removing qemu-user-static binary from chroot" "${QEMU_BINARY} during ${caller}" "info"
-	run_host_command_logged rm -fv "${dst_target}"
 	if [[ "${dst_target}" != "${dst_target_alt}" && -f "${dst_target_alt}" ]]; then
 		run_host_command_logged rm -fv "${dst_target_alt}"
 	fi
 
+	# Restore preserves regardless of which deploy branch ran — the
+	# .armbian.orig marker is what guarantees a target-shipped qemu binary
+	# (codex P2 :24) is put back even when the native-armhf fast path made
+	# no host copy of its own.
 	if [[ -f "${dst_target_bkp}" ]]; then
 		display_alert "Restoring original qemu binary" "${QEMU_BINARY} during ${caller}" "info"
 		run_host_command_logged mv -v "${dst_target_bkp}" "${dst_target}"
