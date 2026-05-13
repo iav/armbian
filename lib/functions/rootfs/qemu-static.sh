@@ -314,7 +314,18 @@ function _native_armhf_setup_binfmt_elf() {
 
 	# Register cleanup BEFORE the authoritative arch-test, so a failure
 	# there still releases the lock via the trap handler.
-	add_cleanup_handler trap_handler_native_armhf_restore_qemu_arm
+	#
+	# Use the _last variant so the restore runs AFTER cleanups registered
+	# earlier in the build (notably trap_handler_cleanup_rootfs_and_image,
+	# added in prepare_rootfs_build_params_and_trap before this function is
+	# reached from rootfs-create.sh/rootfs-image.sh). add_cleanup_handler
+	# prepends, so a plain add_cleanup_handler here would run BEFORE the
+	# chroot/loop teardown — releasing the SH-fd and re-enabling qemu-arm
+	# while subshells of the build (inheriting the SH-fd) are still alive,
+	# which is exactly the inherited-fd / descendant case the ordering
+	# invariant below tries to avoid. See codex P2 review comment on this
+	# line (PR #113).
+	add_cleanup_handler_last trap_handler_native_armhf_restore_qemu_arm
 
 	# Post-disable check is authoritative: arch-test now faces what the
 	# chroot exec will face. False-positive if host kernel lacks COMPAT_VDSO
@@ -342,16 +353,15 @@ function trap_handler_native_armhf_release_emul_lock() {
 # the build's subshells (umount / SDCARD / MOUNT teardown). BSD flock is per-
 # OFD, so a forked subshell inheriting our SH-fd shares the same lock entry —
 # the LOCK_EX-NB probe below would falsely block on the inherited fd of a
-# still-alive child. add_cleanup_handler PREPENDS to the handler list and
-# run_cleanup_handlers iterates it in order, so later-registered handlers
-# run first. Our setup is invoked before mount_chroot in both call sites
-# (rootfs-create.sh and rootfs-image.sh), so mount_chroot's umount handlers
-# are registered after ours, sit at the head of the list, and execute before
-# us — by the time we run, the chroot is unmounted and inheriting subshells
-# have exited. Verified empirically (SIGINT mid-chroot). If a future call
-# site registers our setup AFTER mount_chroot, this invariant inverts and
-# the EX-NB probe will spuriously fail; the documented escape hatches are
-# POSIX F_SETLK on a helper fd or explicit descendant-kill.
+# still-alive child, AND re-enabling qemu-arm while children are still execing
+# would route those execs through a qemu-arm binary that the native deploy
+# path never copied into the chroot. Pin this handler to the tail of the
+# cleanup list via add_cleanup_handler_last (see _native_armhf_setup_binfmt_elf
+# registration), so it runs after both mount_chroot's umount handlers (which
+# add_cleanup_handler prepends) and trap_handler_cleanup_rootfs_and_image
+# (registered earlier in prepare_rootfs_build_params_and_trap, would otherwise
+# sit at the tail and run after a plain-prepended restore). Verified
+# empirically (SIGINT mid-chroot).
 function trap_handler_native_armhf_restore_qemu_arm() {
 	[[ -n "${_native_armhf_lock_fd:-}" ]] || return 0
 	exec {_native_armhf_lock_fd}>&-
@@ -473,12 +483,22 @@ function prepare_host_binfmt_qemu_cross_arm64_host_armhf_target() {
 		run_host_command_logged arch-test "||" true
 	fi
 
-	# to check, we use arch-test; will return 0 if _either_ the host can natively run armhf, or if qemu-arm is correctly working.
-	# Use armhf (Debian-arch) rather than arm to match the build target and the post-disable check in _native_armhf_setup_binfmt_elf.
-	if arch-test armhf; then
-		display_alert "Host can run armhf natively or emulation is correctly setup already" "no need to enable qemu-arm" "debug"
+	# Killswitch (NATIVE_ARMHF_ON_ARM64=no/never/disabled) wants armhf execution
+	# routed through qemu-arm, not the kernel's native armhf compat. `arch-test
+	# armhf` cannot tell those two modes apart — it returns 0 if the kernel can
+	# run armhf at all, which on a native-capable aarch64 host is true even with
+	# no qemu-arm registration. Probe the binfmt_misc entry directly instead:
+	# the registration file must exist, be enabled, and the matching Debian-side
+	# package descriptor must be present (so a later `update-binfmts --enable`
+	# won't NOOP-fail). Any of those missing → import qemu-arm.
+	declare qemu_arm_state="absent"
+	if [[ -e /proc/sys/fs/binfmt_misc/qemu-arm && -f /usr/share/binfmts/qemu-arm ]]; then
+		qemu_arm_state="$(head -n1 /proc/sys/fs/binfmt_misc/qemu-arm 2> /dev/null || true)"
+	fi
+	if [[ "${qemu_arm_state}" == "enabled" ]]; then
+		display_alert "qemu-arm registration present and enabled" "killswitch active — no need to (re)import qemu-arm" "debug"
 	else
-		display_alert "arm64 host can't run armhf natively" "importing enabling qemu-arm" "debug"
+		display_alert "qemu-arm absent or disabled (state='${qemu_arm_state}')" "importing/enabling qemu-arm for killswitch path" "debug"
 		cat <<- BINFMT_ARM_MAGIC > /usr/share/binfmts/qemu-arm
 			package qemu-user-static
 			interpreter /usr/bin/qemu-arm-static
