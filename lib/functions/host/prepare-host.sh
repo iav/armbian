@@ -97,6 +97,14 @@ function prepare_host_noninteractive() {
 
 	prepare_host_binfmt_qemu # in qemu-static.sh as most binfmt/qemu logic is there now
 
+	call_extension_method "host_binfmt_ready" <<- 'HOST_BINFMT_READY'
+		*run after the host's binfmt_misc registrations for the target architecture have been set up*
+		At this point qemu-${arch} is registered and enabled (or the build is a native one).
+		Use this hook to mutate binfmt_misc — for example, an opt-in extension can disable
+		qemu-${arch} here so that the kernel's native binfmt_elf path handles the target
+		architecture for the rest of the build, bypassing qemu emulation overhead.
+	HOST_BINFMT_READY
+
 	# @TODO: rpardini: this does not belong here, instead with the other templates, pre-configuration.
 	[[ ! -f "${USERPATCHES_PATH}"/customize-image.sh ]] && run_host_command_logged cp -pv "${SRC}"/config/templates/customize-image.sh.template "${USERPATCHES_PATH}"/customize-image.sh
 	[[ ! -f "${USERPATCHES_PATH}"/config-example.conf ]] && run_host_command_logged cp -pv "${SRC}"/config/templates/config-example.conf.template "${USERPATCHES_PATH}"/config-example.conf
