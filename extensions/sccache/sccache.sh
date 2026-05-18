@@ -72,6 +72,12 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_WEBDAV_PASSWORD
 	SCCACHE_WEBDAV_TOKEN
 	SCCACHE_WEBDAV_KEY_PREFIX
+	SCCACHE_REDIS
+	SCCACHE_REDIS_USERNAME
+	SCCACHE_REDIS_PASSWORD
+	SCCACHE_REDIS_DB
+	SCCACHE_REDIS_TTL
+	SCCACHE_REDIS_KEY_PREFIX
 	SCCACHE_BUCKET
 	SCCACHE_REGION
 	SCCACHE_ENDPOINT
@@ -114,10 +120,11 @@ function extension_prepare_config__sccache() {
 	local backends_set=0
 	[[ -n "${SCCACHE_BUCKET}" ]] && ((backends_set++)) || true
 	[[ -n "${SCCACHE_WEBDAV_ENDPOINT}" ]] && ((backends_set++)) || true
+	[[ -n "${SCCACHE_REDIS}" ]] && ((backends_set++)) || true
 	[[ "${SCCACHE_GHA_ENABLED}" == "on" || "${SCCACHE_GHA_ENABLED}" == "true" ]] && ((backends_set++)) || true
 	if ((backends_set > 1)); then
 		display_alert "${EXTENSION}: multiple remote backends configured" \
-			"sccache will pick by built-in precedence (GHA > S3 > WebDAV)" "wrn"
+			"sccache will pick by built-in precedence (GHA > S3 > Redis > WebDAV)" "wrn"
 	fi
 
 	_ext_sccache_bootstrap_binary
@@ -298,6 +305,7 @@ function compile_prepare_vars__sccache() {
 	if [[ -z "${SCCACHE_DIR}" &&
 		-z "${SCCACHE_BUCKET}" &&
 		-z "${SCCACHE_WEBDAV_ENDPOINT}" &&
+		-z "${SCCACHE_REDIS}" &&
 		"${SCCACHE_GHA_ENABLED}" != "on" &&
 		"${SCCACHE_GHA_ENABLED}" != "true" ]]; then
 		export SCCACHE_DIR="${COMPILE_CACHE_DIR:-${SRC}/cache/sccache}"
@@ -341,6 +349,7 @@ function _ext_sccache_probe_backend() {
 	# Only probe when a remote backend is actually configured.
 	if [[ -z "${SCCACHE_WEBDAV_ENDPOINT}" &&
 		-z "${SCCACHE_BUCKET}" &&
+		-z "${SCCACHE_REDIS}" &&
 		"${SCCACHE_GHA_ENABLED}" != "on" &&
 		"${SCCACHE_GHA_ENABLED}" != "true" ]]; then
 		return 0
@@ -391,6 +400,9 @@ function _ext_sccache_probe_backend() {
 function _ext_sccache_disable_remote() {
 	unset SCCACHE_WEBDAV_ENDPOINT SCCACHE_WEBDAV_USERNAME \
 		SCCACHE_WEBDAV_PASSWORD SCCACHE_WEBDAV_TOKEN \
+		SCCACHE_WEBDAV_KEY_PREFIX \
+		SCCACHE_REDIS SCCACHE_REDIS_USERNAME SCCACHE_REDIS_PASSWORD \
+		SCCACHE_REDIS_DB SCCACHE_REDIS_TTL SCCACHE_REDIS_KEY_PREFIX \
 		SCCACHE_BUCKET SCCACHE_REGION SCCACHE_ENDPOINT \
 		SCCACHE_S3_USE_SSL SCCACHE_S3_KEY_PREFIX \
 		AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY AWS_SESSION_TOKEN \
@@ -468,6 +480,7 @@ function host_pre_docker_launch__sccache() {
 	local _rewrote_loopback=0
 	_ext_sccache_rewrite_loopback SCCACHE_WEBDAV_ENDPOINT && _rewrote_loopback=1
 	_ext_sccache_rewrite_loopback SCCACHE_ENDPOINT && _rewrote_loopback=1
+	_ext_sccache_rewrite_loopback SCCACHE_REDIS && _rewrote_loopback=1
 	if ((_rewrote_loopback)); then
 		DOCKER_EXTRA_ARGS+=("--add-host=host.docker.internal:host-gateway")
 	fi

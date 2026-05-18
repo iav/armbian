@@ -97,6 +97,53 @@ for AWS S3 set the real region and use IAM credentials.
 `SCCACHE_S3_KEY_PREFIX="armbian/"` namespaces objects when sharing a
 bucket with other projects.
 
+## Redis-compatible server (KvRocks / Tendis / Dragonfly / Redis)
+
+`sccache` speaks the RESP wire protocol. Plain Redis works but is
+in-memory only; for a compile cache (mostly write-once, terabyte-scale
+key space) prefer a **disk-resident RESP** store so the working set
+isn't capped by RAM:
+
+- **Apache KvRocks** (Apache 2.0, RocksDB backend) — the canonical fit.
+  No official .deb; deploy via `docker run apache/kvrocks:<ver>` under
+  a systemd wrapper or build from source.
+- **Tendis** (Tencent, BSD-3, RocksDB) — production-tested at Tencent,
+  smaller external community.
+- **Dragonfly** (BSL/AGPL) — RAM-first with optional SSD tiered
+  storage; ships .deb on GitHub releases but isn't truly disk-resident
+  by default.
+
+Point sccache at the server:
+
+```bash
+./compile.sh ENABLE_EXTENSIONS=sccache \
+             SCCACHE_REDIS="redis://:<password>@<server>:6666" \
+             BOARD=... BRANCH=... RELEASE=...
+```
+
+URL form is `redis://[username:password@]host[:port][/db]`. For
+unauthenticated LAN deployments drop the credentials prefix:
+`SCCACHE_REDIS="redis://<server>:6666"`. Alternatively split the
+password out to keep it off the command line and out of the URL:
+
+```bash
+SCCACHE_REDIS="redis://<server>:6666" \
+SCCACHE_REDIS_PASSWORD="<password>" \
+ENABLE_EXTENSIONS=sccache ./compile.sh BOARD=...
+```
+
+`SCCACHE_REDIS_KEY_PREFIX="armbian/"` namespaces keys when sharing a
+KvRocks instance with other tools. `SCCACHE_REDIS_TTL=<seconds>` adds
+expiry on writes (useful for capping disk growth without a separate
+eviction job — KvRocks honours TTL via RocksDB compaction).
+
+**KvRocks quirks worth knowing:**
+- RocksDB sizes in `kvrocks.conf` are **MB, not bytes**
+  (`rocksdb.block_cache_size 256` = 256 MiB). Bytes values fail with
+  `out of numeric range`.
+- `DBSIZE` returns `0` until the first lazy scan; use `KEYS '*'` to
+  see what was actually written.
+
 ## GitHub Actions cache (CI runners)
 
 `mozilla-actions/sccache-action` in the workflow exports
@@ -111,11 +158,12 @@ overage after late 2025.
 ## DNS-SD discovery
 
 Unlike `ccache-remote`, sccache (as of v0.15) has no built-in
-auto-discovery for its WebDAV/S3 endpoints. If you want to advertise
-yours over Avahi anyway (so other tools can find it), `cp` an
+auto-discovery for its WebDAV / S3 / Redis endpoints. If you want to
+advertise yours over Avahi anyway (so other tools can find it), `cp` an
 appropriate `.service` file from the ccache-remote extension's `misc/`
 tree and rename the service type to `_sccache._tcp`. The Armbian
-sccache extension does not consume those announcements.
+sccache extension does not consume those announcements yet — that's a
+queued follow-up.
 
 ## Verifying the cache is actually used
 
