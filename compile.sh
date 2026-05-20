@@ -51,3 +51,28 @@ cli_entrypoint "$@"
 
 # Log the last statement of this script for debugging purposes.
 display_alert "Armbian build script exiting" "very last thing" "cleanup"
+
+# TEST: shellcheck demo block — NOT called, only here so the new
+# maintenance-shellcheck-suggest workflow has something to flag in PR.
+# - SC2006 / SC2196: shellcheck can auto-fix these → reviewdog/action-suggester
+#   posts them as inline `suggestion` blocks.
+# - SC2154 / SC2164: shellcheck cannot auto-fix these → reviewdog posts as
+#   inline review comments without a click-to-apply suggestion.
+# Remove this block once the workflow is verified end-to-end.
+function _shellcheck_demo() {
+	# SC2006: legacy `cmd` backticks — autofix to $()
+	local kernel=`uname -r`
+
+	# SC2196: egrep is deprecated — autofix to `grep -E`
+	echo "$kernel" | egrep '^[0-9]'
+
+	# SC2154: referenced but never assigned — no autofix, review comment only.
+	echo "$undefined_var_for_demo"
+
+	# SC2164: cd may fail and the script keeps going — no autofix.
+	cd /tmp
+
+	# Note: double space + redirect with no surrounding space — only
+	# shfmt complains; shellcheck doesn't flag this.
+	echo "demo"  "value">/dev/null
+}
