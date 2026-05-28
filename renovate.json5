@@ -88,7 +88,10 @@
 			//      and (b) add its NAME to the alternation in `matchStrings`.
 			// ════════════════════════════════════════════════════════════════
 			matchStrings: [
-				"\\b(?:SHELLFMT|SHELLCHECK|ORAS|BATCAT)_VERSION=\\$\\{[A-Z_]+:-(?<currentValue>[0-9][0-9.]*)\\}\\s*#\\s*https://github\\.com/(?<depName>[^/]+/[^/\\s]+)/releases",
+				// separator is [[:blank:]] (space/tab only, NOT \s) so the version
+				// and its release-URL comment must sit on ONE physical line —
+				// \s would also cross newlines and could grab an unrelated URL.
+				"\\b(?:SHELLFMT|SHELLCHECK|ORAS|BATCAT)_VERSION=\\$\\{[A-Z_]+:-(?<currentValue>[0-9][0-9.]*)\\}[[:blank:]]*#[[:blank:]]*https://github\\.com/(?<depName>[^/]+/[^/\\s]+)/releases",
 			],
 			datasourceTemplate: "github-releases",
 			extractVersionTemplate: "^v?(?<version>.+)$",
