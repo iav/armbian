@@ -11,3 +11,10 @@ target="alpha"
 if [[ ! " ${arr[@]} " =~ " ${target} " ]]; then
 	echo "not found"
 fi
+
+# Second intentional SC2199 on a fresh line, so reviewdog posts a
+# new (non-deduplicated) comment on the Conversation tab.
+other=(x y z)
+if [[ ! " ${other[@]} " =~ " ${target} " ]]; then
+	echo "still not found"
+fi
