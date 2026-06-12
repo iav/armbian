@@ -88,6 +88,9 @@ driver_rtl8189ES() {
 		# fix compilation for kernels >= 5.4.251
 		process_patch_file "${SRC}/patch/misc/wireless-rtl8189es-Fix-building-on-5.4.251-kernel.patch" "applying"
 
+		# fix -Wmissing-prototypes (static + self-include + cross-file prototypes)
+		process_patch_file "${SRC}/patch/misc/wireless-rtl8189es-Fix-missing-prototypes.patch" "applying"
+
 		# fix compilation for kernels >= 7.1
 		if linux-version compare "${version}" ge 7.1; then
 			process_patch_file "${SRC}/patch/misc/wireless-rtl8189es-Fix-building-on-7.1-kernel.patch" "applying"
@@ -138,6 +141,9 @@ driver_rtl8189FS() {
 
 		# fix compilation for kernels >= 5.4.251
 		process_patch_file "${SRC}/patch/misc/wireless-rtl8189fs-Fix-building-on-5.4.251-kernel.patch" "applying"
+
+		# fix -Wmissing-prototypes (static + self-include + cross-file prototypes)
+		process_patch_file "${SRC}/patch/misc/wireless-rtl8189fs-Fix-missing-prototypes.patch" "applying"
 
 		# fix compilation for kernels >= 7.1
 		if linux-version compare "${version}" ge 7.1; then

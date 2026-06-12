@@ -1,0 +1,4665 @@
+diff --git a/drivers/net/wireless/rtl8189fs/core/efuse/rtw_efuse.c b/drivers/net/wireless/rtl8189fs/core/efuse/rtw_efuse.c
+index 1bc6c32..2607482 100644
+--- a/drivers/net/wireless/rtl8189fs/core/efuse/rtw_efuse.c
++++ b/drivers/net/wireless/rtl8189fs/core/efuse/rtw_efuse.c
+@@ -56,7 +56,7 @@ BOOLEAN rtw_file_efuse_IsMasked(PADAPTER pAdapter, u16 Offset, u8 *maskbuf)
+ 
+ 	return (result > 0) ? 0 : 1;
+ }
+-BOOLEAN efuse_IsBT_Masked(PADAPTER pAdapter, u16 Offset)
++static BOOLEAN efuse_IsBT_Masked(PADAPTER pAdapter, u16 Offset)
+ {
+ 	PHAL_DATA_TYPE pHalData = GET_HAL_DATA(pAdapter);
+ 
+@@ -919,7 +919,7 @@ out_free_buffer:
+ 		rtw_mfree((u8 *)eFuseWord, EFUSE_MAX_SECTION_NUM * (EFUSE_MAX_WORD_UNIT * 2));
+ }
+ 
+-void efuse_PreUpdateAction(
++static void efuse_PreUpdateAction(
+ 	PADAPTER	pAdapter,
+ 	u32			*BackupRegs)
+ {
+@@ -948,7 +948,7 @@ void efuse_PreUpdateAction(
+ }
+ 
+ 
+-void efuse_PostUpdateAction(
++static void efuse_PostUpdateAction(
+ 	PADAPTER	pAdapter,
+ 	u32			*BackupRegs)
+ {
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_ap.c b/drivers/net/wireless/rtl8189fs/core/rtw_ap.c
+index d5936d9..9489a6b 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_ap.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_ap.c
+@@ -949,7 +949,7 @@ _exit:
+ }
+ #endif
+ 
+-void rtw_init_bmc_sta_tx_rate(_adapter *padapter, struct sta_info *psta)
++static void rtw_init_bmc_sta_tx_rate(_adapter *padapter, struct sta_info *psta)
+ {
+ #ifdef CONFIG_BMC_TX_LOW_RATE
+ 	struct mlme_ext_priv *pmlmeext = &(padapter->mlmeextpriv);
+@@ -2801,7 +2801,7 @@ int rtw_ap_set_wep_key(_adapter *padapter, u8 *key, u8 keylen, int keyid, u8 set
+ 	return rtw_ap_set_key(padapter, key, alg, keyid, set_tx);
+ }
+ 
+-u8 rtw_ap_bmc_frames_hdl(_adapter *padapter)
++static u8 rtw_ap_bmc_frames_hdl(_adapter *padapter)
+ {
+ #define HIQ_XMIT_COUNTS (6)
+ 	_irqL irqL;
+@@ -4121,7 +4121,7 @@ void start_ap_mode(_adapter *padapter)
+ 
+ }
+ 
+-void rtw_ap_bcmc_sta_flush(_adapter *padapter)
++static void rtw_ap_bcmc_sta_flush(_adapter *padapter)
+ {
+ #ifdef CONFIG_CONCURRENT_MODE
+ 	int cam_id = -1;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_br_ext.c b/drivers/net/wireless/rtl8189fs/core/rtw_br_ext.c
+index bf94a87..686acc9 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_br_ext.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_br_ext.c
+@@ -50,6 +50,7 @@
+ 			#include <net/ip6_checksum.h>
+ 		#else
+ 			#include <net/checksum.h>
++#include "rtw_br_ext.h"
+ 		#endif
+ 	#endif
+ #endif
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_chplan.c b/drivers/net/wireless/rtl8189fs/core/rtw_chplan.c
+index 8800505..6b1b6cc 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_chplan.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_chplan.c
+@@ -426,7 +426,7 @@ bool rtw_chplan_is_empty(u8 id)
+ 	return _FALSE;
+ }
+ 
+-bool rtw_regsty_is_excl_chs(struct registry_priv *regsty, u8 ch)
++static bool rtw_regsty_is_excl_chs(struct registry_priv *regsty, u8 ch)
+ {
+ 	int i;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_cmd.c b/drivers/net/wireless/rtl8189fs/core/rtw_cmd.c
+index 09985fc..54b2742 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_cmd.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_cmd.c
+@@ -2054,7 +2054,7 @@ exit:
+ 
+ }
+ 
+-void free_assoc_resources_hdl(_adapter *padapter, u8 lock_scanned_queue)
++static void free_assoc_resources_hdl(_adapter *padapter, u8 lock_scanned_queue)
+ {
+ 	rtw_free_assoc_resources(padapter, lock_scanned_queue);
+ }
+@@ -2217,7 +2217,7 @@ exit:
+ 	return res;
+ }
+ 
+-u8 _rtw_set_chplan_cmd(_adapter *adapter, int flags, u8 chplan, const struct country_chplan *country_ent, u8 swconfig)
++static u8 _rtw_set_chplan_cmd(_adapter *adapter, int flags, u8 chplan, const struct country_chplan *country_ent, u8 swconfig)
+ {
+ 	struct cmd_obj *cmdobj;
+ 	struct	SetChannelPlan_param *parm;
+@@ -2489,7 +2489,7 @@ u8 rtw_periodic_tsf_update_end_cmd(_adapter *adapter)
+ exit:
+ 	return res;
+ }
+-u8 rtw_ssmps_wk_hdl(_adapter *adapter, struct ssmps_cmd_parm *ssmp_param)
++static u8 rtw_ssmps_wk_hdl(_adapter *adapter, struct ssmps_cmd_parm *ssmp_param)
+ {
+ 	u8 res = _SUCCESS;
+ 	struct sta_info *sta = ssmp_param->sta;
+@@ -3265,7 +3265,7 @@ void rtw_iface_dynamic_chk_wk_hdl(_adapter *padapter)
+ 
+ 
+ }
+-void rtw_dynamic_chk_wk_hdl(_adapter *padapter)
++static void rtw_dynamic_chk_wk_hdl(_adapter *padapter)
+ {
+ 	rtw_mi_dynamic_chk_wk_hdl(padapter);
+ #ifdef CONFIG_MP_INCLUDED
+@@ -3314,7 +3314,7 @@ struct lps_ctrl_wk_parm {
+ 	#endif
+ };
+ 
+-void lps_ctrl_wk_hdl(_adapter *padapter, u8 lps_ctrl_type, u8 *buf)
++static void lps_ctrl_wk_hdl(_adapter *padapter, u8 lps_ctrl_type, u8 *buf)
+ {
+ 	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
+ 	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+@@ -3493,7 +3493,7 @@ u8 rtw_lps_ctrl_leave_set_1t1r_cmd(_adapter *adapter, u8 lps_1t1r, u8 flags)
+ }
+ #endif
+ 
+-void rtw_dm_in_lps_hdl(_adapter *padapter)
++static void rtw_dm_in_lps_hdl(_adapter *padapter)
+ {
+ 	rtw_hal_set_hwreg(padapter, HW_VAR_DM_IN_LPS_LCLK, NULL);
+ }
+@@ -3534,7 +3534,7 @@ exit:
+ 
+ }
+ 
+-void rtw_lps_change_dtim_hdl(_adapter *padapter, u8 dtim)
++static void rtw_lps_change_dtim_hdl(_adapter *padapter, u8 dtim)
+ {
+ 	struct pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
+ 
+@@ -3713,7 +3713,7 @@ exit:
+ }
+ #endif
+ 
+-void rtw_dm_ra_mask_hdl(_adapter *padapter, struct sta_info *psta)
++static void rtw_dm_ra_mask_hdl(_adapter *padapter, struct sta_info *psta)
+ {
+ 	if (psta)
+ 		set_sta_rate(padapter, psta);
+@@ -3755,13 +3755,13 @@ exit:
+ 
+ }
+ 
+-void power_saving_wk_hdl(_adapter *padapter)
++static void power_saving_wk_hdl(_adapter *padapter)
+ {
+ 	rtw_ps_processor(padapter);
+ }
+ 
+ /* add for CONFIG_IEEE80211W, none 11w can use it */
+-void reset_securitypriv_hdl(_adapter *padapter)
++static void reset_securitypriv_hdl(_adapter *padapter)
+ {
+ 	rtw_reset_securitypriv(padapter);
+ }
+@@ -5051,7 +5051,7 @@ inline u8 rtw_customer_str_write_cmd(_adapter *adapter, const u8 *cstr)
+ }
+ #endif /* CONFIG_RTW_CUSTOMER_STR */
+ 
+-u8 rtw_c2h_wk_cmd(PADAPTER padapter, u8 *pbuf, u16 length, u8 type)
++static u8 rtw_c2h_wk_cmd(PADAPTER padapter, u8 *pbuf, u16 length, u8 type)
+ {
+ 	struct cmd_obj *ph2c;
+ 	struct drvextra_cmd_parm *pdrvextra_cmd_parm;
+@@ -5191,7 +5191,7 @@ exit:
+ }
+ #endif /* CONFIG_FW_C2H_REG */
+ 
+-u8 session_tracker_cmd(_adapter *adapter, u8 cmd, struct sta_info *sta, u8 *local_naddr, u8 *local_port, u8 *remote_naddr, u8 *remote_port)
++static u8 session_tracker_cmd(_adapter *adapter, u8 cmd, struct sta_info *sta, u8 *local_naddr, u8 *local_port, u8 *remote_naddr, u8 *remote_port)
+ {
+ 	struct cmd_priv	*cmdpriv = &adapter->cmdpriv;
+ 	struct cmd_obj *cmdobj;
+@@ -5257,7 +5257,7 @@ inline u8 session_tracker_del_cmd(_adapter *adapter, struct sta_info *sta, u8 *l
+ 	return session_tracker_cmd(adapter, ST_CMD_DEL, sta, local_naddr, local_port, remote_naddr, remote_port);
+ }
+ 
+-void session_tracker_chk_for_sta(_adapter *adapter, struct sta_info *sta)
++static void session_tracker_chk_for_sta(_adapter *adapter, struct sta_info *sta)
+ {
+ 	struct st_ctl_t *st_ctl = &sta->st_ctl;
+ 	int i;
+@@ -5339,7 +5339,7 @@ exit:
+ 	return;
+ }
+ 
+-void session_tracker_chk_for_adapter(_adapter *adapter)
++static void session_tracker_chk_for_adapter(_adapter *adapter)
+ {
+ 	struct sta_priv *stapriv = &adapter->stapriv;
+ 	struct sta_info *sta;
+@@ -5371,7 +5371,7 @@ void session_tracker_chk_for_adapter(_adapter *adapter)
+ #endif
+ }
+ 
+-void session_tracker_cmd_hdl(_adapter *adapter, struct st_cmd_parm *parm)
++static void session_tracker_cmd_hdl(_adapter *adapter, struct st_cmd_parm *parm)
+ {
+ 	u8 cmd = parm->cmd;
+ 	struct sta_info *sta = parm->sta;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_ieee80211.c b/drivers/net/wireless/rtl8189fs/core/rtw_ieee80211.c
+index 2c6d816..8980a98 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_ieee80211.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_ieee80211.c
+@@ -426,7 +426,7 @@ void rtw_set_supported_rate(u8 *SupportedRates, uint mode)
+ 	}
+ }
+ 
+-void rtw_filter_suppport_rateie(WLAN_BSSID_EX *pbss_network, u8 keep)
++static void rtw_filter_suppport_rateie(WLAN_BSSID_EX *pbss_network, u8 keep)
+ {
+ 	u8 i, idx = 0, new_rate[NDIS_802_11_LENGTH_RATES_EX], *p;
+ 	int ret = 0;
+@@ -1637,7 +1637,7 @@ void dump_ht_cap_ie_content(void *sel, const u8 *buf, u32 buf_len)
+ 		      , HT_SUP_MCS_SET_ARG(HT_CAP_ELE_SUP_MCS_SET(buf)));
+ }
+ 
+-void dump_ht_cap_ie(void *sel, const u8 *ie, u32 ie_len)
++static void dump_ht_cap_ie(void *sel, const u8 *ie, u32 ie_len)
+ {
+ 	const u8 *ht_cap_ie;
+ 	sint ht_cap_ielen;
+@@ -1656,7 +1656,7 @@ const char *const _ht_sc_offset_str[] = {
+ 	"SCB",
+ };
+ 
+-void dump_ht_op_ie_content(void *sel, const u8 *buf, u32 buf_len)
++static void dump_ht_op_ie_content(void *sel, const u8 *buf, u32 buf_len)
+ {
+ 	if (buf_len != HT_OP_IE_LEN) {
+ 		RTW_PRINT_SEL(sel, "Invalid HT operation IE len:%d != %d\n", buf_len, HT_OP_IE_LEN);
+@@ -1670,7 +1670,7 @@ void dump_ht_op_ie_content(void *sel, const u8 *buf, u32 buf_len)
+ 	);
+ }
+ 
+-void dump_ht_op_ie(void *sel, const u8 *ie, u32 ie_len)
++static void dump_ht_op_ie(void *sel, const u8 *ie, u32 ie_len)
+ {
+ 	const u8 *ht_op_ie;
+ 	sint ht_op_ielen;
+@@ -2698,7 +2698,7 @@ int ieee80211_get_hdrlen(u16 fc)
+ 	return hdrlen;
+ }
+ 
+-int rtw_get_cipher_info(struct wlan_network *pnetwork)
++static int rtw_get_cipher_info(struct wlan_network *pnetwork)
+ {
+ 	u32 wpa_ielen;
+ 	unsigned char *pbuf;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_mi.c b/drivers/net/wireless/rtl8189fs/core/rtw_mi.c
+index d41bdb4..622e549 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_mi.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_mi.c
+@@ -877,7 +877,7 @@ void rtw_mi_buddy_xmit_tasklet_schedule(_adapter *padapter)
+ }
+ #endif
+ 
+-u8 _rtw_mi_busy_traffic_check(_adapter *padapter, void *data)
++static u8 _rtw_mi_busy_traffic_check(_adapter *padapter, void *data)
+ {
+ 	u32 passtime;
+ 	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
+@@ -1313,7 +1313,7 @@ _adapter *rtw_get_iface_by_hwport(_adapter *padapter, u8 hw_port)
+ /*#define CONFIG_SKB_ALLOCATED*/
+ #define DBG_SKB_PROCESS
+ #ifdef DBG_SKB_PROCESS
+-void rtw_dbg_skb_process(_adapter *padapter, union recv_frame *precvframe, union recv_frame *pcloneframe)
++static void rtw_dbg_skb_process(_adapter *padapter, union recv_frame *precvframe, union recv_frame *pcloneframe)
+ {
+ 	_pkt *pkt_copy, *pkt_org;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_mlme.c b/drivers/net/wireless/rtl8189fs/core/rtw_mlme.c
+index 1d9276b..5b1e897 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_mlme.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_mlme.c
+@@ -20,7 +20,7 @@ extern void indicate_wx_scan_complete_event(_adapter *padapter);
+ extern u8 rtw_do_join(_adapter *padapter);
+ 
+ 
+-void rtw_init_mlme_timer(_adapter *padapter)
++static void rtw_init_mlme_timer(_adapter *padapter)
+ {
+ 	struct	mlme_priv *pmlmepriv = &padapter->mlmepriv;
+ 
+@@ -37,7 +37,7 @@ void rtw_init_mlme_timer(_adapter *padapter)
+ #endif
+ }
+ 
+-sint	_rtw_init_mlme_priv(_adapter *padapter)
++static sint	_rtw_init_mlme_priv(_adapter *padapter)
+ {
+ 	sint	i;
+ 	u8	*pbuf;
+@@ -295,7 +295,7 @@ exit:
+ }
+ #endif /* defined(CONFIG_WFD) && defined(CONFIG_IOCTL_CFG80211) */
+ 
+-void _rtw_free_mlme_priv(struct mlme_priv *pmlmepriv)
++static void _rtw_free_mlme_priv(struct mlme_priv *pmlmepriv)
+ {
+ 	_adapter *adapter = mlme_to_adapter(pmlmepriv);
+ 	if (NULL == pmlmepriv) {
+@@ -314,7 +314,7 @@ exit:
+ 	return;
+ }
+ 
+-sint	_rtw_enqueue_network(_queue *queue, struct wlan_network *pnetwork)
++static sint	_rtw_enqueue_network(_queue *queue, struct wlan_network *pnetwork)
+ {
+ 	_irqL irqL;
+ 
+@@ -1654,7 +1654,7 @@ static void free_scanqueue(struct	mlme_priv *pmlmepriv)
+ 
+ }
+ 
+-void rtw_reset_rx_info(_adapter *adapter)
++static void rtw_reset_rx_info(_adapter *adapter)
+ {
+ 	struct recv_priv  *precvpriv = &adapter->recvpriv;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_mlme_ext.c b/drivers/net/wireless/rtl8189fs/core/rtw_mlme_ext.c
+index 44e8a2a..83ff48c 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_mlme_ext.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_mlme_ext.c
+@@ -19,6 +19,7 @@
+ 	#include <rtw_wifi_regd.h>
+ #endif /* CONFIG_IOCTL_CFG80211 */
+ #include <hal_data.h>
++#include "rtw_mlme_ext.h"
+ 
+ 
+ struct mlme_handler mlme_sta_tbl[] = {
+@@ -1130,7 +1131,7 @@ static void init_mlme_ext_priv_value(_adapter *padapter)
+ #endif /* ROKU_PRIVATE */
+ }
+ 
+-void init_mlme_ext_timer(_adapter *padapter)
++static void init_mlme_ext_timer(_adapter *padapter)
+ {
+ 	struct	mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
+ 
+@@ -1405,7 +1406,7 @@ void mgt_dispatcher(_adapter *padapter, union recv_frame *precv_frame)
+ }
+ 
+ #ifdef CONFIG_P2P
+-u32 p2p_listen_state_process(_adapter *padapter, unsigned char *da)
++static u32 p2p_listen_state_process(_adapter *padapter, unsigned char *da)
+ {
+ 	bool response = _TRUE;
+ 
+@@ -3088,7 +3089,7 @@ unsigned int OnAtim(_adapter *padapter, union recv_frame *precv_frame)
+ 	return _SUCCESS;
+ }
+ 
+-unsigned int on_action_spct_ch_switch(_adapter *padapter, struct sta_info *psta, u8 *ies, uint ies_len)
++static unsigned int on_action_spct_ch_switch(_adapter *padapter, struct sta_info *psta, u8 *ies, uint ies_len)
+ {
+ 	unsigned int ret = _FAIL;
+ 	struct mlme_ext_priv *mlmeext = &padapter->mlmeextpriv;
+@@ -4135,7 +4136,7 @@ void issue_p2p_GO_request(_adapter *padapter, u8 *raddr)
+ }
+ 
+ 
+-void issue_p2p_GO_response(_adapter *padapter, u8 *raddr, u8 *frame_body, uint len, u8 result)
++static void issue_p2p_GO_response(_adapter *padapter, u8 *raddr, u8 *frame_body, uint len, u8 result)
+ {
+ 	struct p2p_channels *ch_list = &(adapter_to_rfctl(padapter)->channel_list);
+ 	unsigned char category = RTW_WLAN_CATEGORY_PUBLIC;
+@@ -4552,7 +4553,7 @@ void issue_p2p_GO_response(_adapter *padapter, u8 *raddr, u8 *frame_body, uint l
+ 
+ }
+ 
+-void issue_p2p_GO_confirm(_adapter *padapter, u8 *raddr, u8 result)
++static void issue_p2p_GO_confirm(_adapter *padapter, u8 *raddr, u8 result)
+ {
+ 
+ 	unsigned char category = RTW_WLAN_CATEGORY_PUBLIC;
+@@ -5430,7 +5431,7 @@ void issue_p2p_provision_request(_adapter *padapter, u8 *pssid, u8 ussidlen, u8
+ }
+ 
+ 
+-u8 is_matched_in_profilelist(u8 *peermacaddr, struct profile_info *profileinfo)
++static u8 is_matched_in_profilelist(u8 *peermacaddr, struct profile_info *profileinfo)
+ {
+ 	u8 i, match_result = 0;
+ 
+@@ -5746,7 +5747,7 @@ void issue_probersp_p2p(_adapter *padapter, unsigned char *da)
+ 
+ }
+ 
+-int _issue_probereq_p2p(_adapter *padapter, u8 *da, int wait_ack)
++static int _issue_probereq_p2p(_adapter *padapter, u8 *da, int wait_ack)
+ {
+ 	int ret = _FAIL;
+ 	struct xmit_frame		*pmgntframe;
+@@ -6123,7 +6124,7 @@ exit:
+ 
+ #endif /* CONFIG_P2P */
+ 
+-s32 rtw_action_public_decache(union recv_frame *rframe, u8 token_offset)
++static s32 rtw_action_public_decache(union recv_frame *rframe, u8 token_offset)
+ {
+ 	_adapter *adapter = rframe->u.hdr.adapter;
+ 	struct mlme_ext_priv *mlmeext = &(adapter->mlmeextpriv);
+@@ -6148,7 +6149,7 @@ s32 rtw_action_public_decache(union recv_frame *rframe, u8 token_offset)
+ 	return _SUCCESS;
+ }
+ 
+-unsigned int on_action_public_p2p(union recv_frame *precv_frame)
++static unsigned int on_action_public_p2p(union recv_frame *precv_frame)
+ {
+ 	_adapter *padapter = precv_frame->u.hdr.adapter;
+ 	u8 *pframe = precv_frame->u.hdr.rx_data;
+@@ -6498,7 +6499,7 @@ exit:
+ 	return _SUCCESS;
+ }
+ 
+-unsigned int on_action_public_vendor(union recv_frame *precv_frame)
++static unsigned int on_action_public_vendor(union recv_frame *precv_frame)
+ {
+ 	unsigned int ret = _FAIL;
+ 	u8 *pframe = precv_frame->u.hdr.rx_data;
+@@ -6518,7 +6519,7 @@ exit:
+ 	return ret;
+ }
+ 
+-unsigned int on_action_public_default(union recv_frame *precv_frame, u8 action)
++static unsigned int on_action_public_default(union recv_frame *precv_frame, u8 action)
+ {
+ 	unsigned int ret = _FAIL;
+ 	u8 *pframe = precv_frame->u.hdr.rx_data;
+@@ -7386,7 +7387,7 @@ unsigned int DoReserved(_adapter *padapter, union recv_frame *precv_frame)
+ 	return _SUCCESS;
+ }
+ 
+-struct xmit_frame *_alloc_mgtxmitframe(struct xmit_priv *pxmitpriv, bool once)
++static struct xmit_frame *_alloc_mgtxmitframe(struct xmit_priv *pxmitpriv, bool once)
+ {
+ 	struct xmit_frame *pmgntframe;
+ 	struct xmit_buf *pxmitbuf;
+@@ -8323,7 +8324,7 @@ void issue_probersp(_adapter *padapter, unsigned char *da, u8 is_valid_p2p_probe
+ 
+ }
+ 
+-int _issue_probereq(_adapter *padapter, const NDIS_802_11_SSID *pssid, const u8 *da, u8 ch, bool append_wps, int wait_ack)
++static int _issue_probereq(_adapter *padapter, const NDIS_802_11_SSID *pssid, const u8 *da, u8 ch, bool append_wps, int wait_ack)
+ {
+ 	int ret = _FAIL;
+ 	struct xmit_frame		*pmgntframe;
+@@ -10448,7 +10449,7 @@ void issue_action_BSSCoexistPacket(_adapter *padapter)
+ }
+ 
+ /* Spatial Multiplexing Powersave (SMPS) action frame */
+-int _issue_action_SM_PS(_adapter *padapter ,  unsigned char *raddr , u8 NewMimoPsMode ,  u8 wait_ack)
++static int _issue_action_SM_PS(_adapter *padapter ,  unsigned char *raddr , u8 NewMimoPsMode ,  u8 wait_ack)
+ {
+ 
+ 	int ret = _FAIL;
+@@ -12460,7 +12461,7 @@ When station does not receive any packet in MAX_CONTINUAL_NORXPACKET_COUNT*2 sec
+ recipient station will teardown the block ack by issuing DELBA frame.
+ 
+ *********************************************************************/
+-void rtw_delba_check(_adapter *padapter, struct sta_info *psta, u8 from_timer)
++static void rtw_delba_check(_adapter *padapter, struct sta_info *psta, u8 from_timer)
+ {
+ 	int	i = 0;
+ 	int ret = _SUCCESS;
+@@ -12498,7 +12499,7 @@ void rtw_delba_check(_adapter *padapter, struct sta_info *psta, u8 from_timer)
+ 	}
+ }
+ 
+-u8 chk_ap_is_alive(_adapter *padapter, struct sta_info *psta)
++static u8 chk_ap_is_alive(_adapter *padapter, struct sta_info *psta)
+ {
+ 	u8 ret = _FALSE;
+ #ifdef DBG_EXPIRATION_CHK
+@@ -12538,7 +12539,7 @@ u8 chk_ap_is_alive(_adapter *padapter, struct sta_info *psta)
+ 	return ret;
+ }
+ 
+-u8 chk_adhoc_peer_is_alive(struct sta_info *psta)
++static u8 chk_adhoc_peer_is_alive(struct sta_info *psta)
+ {
+ 	u8 ret = _TRUE;
+ 
+@@ -14127,7 +14128,7 @@ static bool scan_abort_hdl(_adapter *adapter)
+ 	return ret;
+ }
+ 
+-u8 rtw_scan_sparse(_adapter *adapter, struct rtw_ieee80211_channel *ch, u8 ch_num)
++static u8 rtw_scan_sparse(_adapter *adapter, struct rtw_ieee80211_channel *ch, u8 ch_num)
+ {
+ 	/* interval larger than this is treated as backgroud scan */
+ #ifndef RTW_SCAN_SPARSE_BG_INTERVAL_MS
+@@ -14222,7 +14223,7 @@ u8 rtw_scan_sparse(_adapter *adapter, struct rtw_ieee80211_channel *ch, u8 ch_nu
+ }
+ 
+ #ifdef CONFIG_SCAN_BACKOP
+-u8 rtw_scan_backop_decision(_adapter *adapter)
++static u8 rtw_scan_backop_decision(_adapter *adapter)
+ {
+ 	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
+ 	struct mi_state mstate;
+@@ -14645,7 +14646,7 @@ void site_survey(_adapter *padapter, u8 survey_channel, RT_SCAN_TYPE ScanType)
+ 	return;
+ }
+ 
+-void survey_done_set_ch_bw(_adapter *padapter)
++static void survey_done_set_ch_bw(_adapter *padapter)
+ {
+ 	struct mlme_ext_priv *pmlmeext = &padapter->mlmeextpriv;
+ 	u8 cur_channel = 0;
+@@ -14715,7 +14716,7 @@ exit:
+  *
+  * Returns: 0: no ps announcement is doing. 1: ps announcement is doing
+  */
+-u8 rtw_ps_annc(_adapter *adapter, bool ps)
++static u8 rtw_ps_annc(_adapter *adapter, bool ps)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	_adapter *iface;
+@@ -14804,7 +14805,7 @@ void rtw_back_opch(_adapter *adapter)
+ 	_exit_critical_mutex(&rfctl->offch_mutex, NULL);
+ }
+ 
+-void sitesurvey_set_igi(_adapter *adapter)
++static void sitesurvey_set_igi(_adapter *adapter)
+ {
+ 	struct mlme_ext_priv *mlmeext = &adapter->mlmeextpriv;
+ 	struct ss_res *ss = &mlmeext->sitesurvey_res;
+@@ -14864,7 +14865,7 @@ void sitesurvey_set_igi(_adapter *adapter)
+ 		break;
+ 	}
+ }
+-void sitesurvey_set_msr(_adapter *adapter, bool enter)
++static void sitesurvey_set_msr(_adapter *adapter, bool enter)
+ {
+ 	u8 network_type;
+ 	struct mlme_ext_priv *pmlmeext = &adapter->mlmeextpriv;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_mp.c b/drivers/net/wireless/rtl8189fs/core/rtw_mp.c
+index 7eb6e75..b78cf77 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_mp.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_mp.c
+@@ -300,7 +300,7 @@ static void PHY_SetRFPathSwitch_default(
+ }
+ #endif
+ 
+-void mpt_InitHWConfig(PADAPTER Adapter)
++static void mpt_InitHWConfig(PADAPTER Adapter)
+ {
+ 	PHAL_DATA_TYPE hal;
+ 
+@@ -1162,7 +1162,7 @@ int SetTxPower(PADAPTER pAdapter)
+ 	return _TRUE;
+ }
+ 
+-void SetTxAGCOffset(PADAPTER pAdapter, u32 ulTxAGCOffset)
++static void SetTxAGCOffset(PADAPTER pAdapter, u32 ulTxAGCOffset)
+ {
+ 	u32 TxAGCOffset_B, TxAGCOffset_C, TxAGCOffset_D, tmpAGC;
+ 
+@@ -1686,7 +1686,7 @@ void fill_tx_desc_8703b(PADAPTER padapter)
+ #endif
+ 
+ #if defined(CONFIG_RTL8188F)
+-void fill_tx_desc_8188f(PADAPTER padapter)
++static void fill_tx_desc_8188f(PADAPTER padapter)
+ {
+ 	struct mp_priv *pmp_priv = &padapter->mppriv;
+ 	struct pkt_attrib *pattrib = &(pmp_priv->tx.attrib);
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_odm.c b/drivers/net/wireless/rtl8189fs/core/rtw_odm.c
+index 4e35d81..54d3a12 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_odm.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_odm.c
+@@ -64,7 +64,7 @@ void rtw_odm_init_ic_type(_adapter *adapter)
+ 	odm_cmn_info_init(odm, ODM_CMNINFO_IC_TYPE, ic_type);
+ }
+ 
+-void rtw_odm_adaptivity_ver_msg(void *sel, _adapter *adapter)
++static void rtw_odm_adaptivity_ver_msg(void *sel, _adapter *adapter)
+ {
+ 	RTW_PRINT_SEL(sel, "ADAPTIVITY_VERSION "ADAPTIVITY_VERSION"\n");
+ }
+@@ -72,7 +72,7 @@ void rtw_odm_adaptivity_ver_msg(void *sel, _adapter *adapter)
+ #define RTW_ADAPTIVITY_EN_DISABLE 0
+ #define RTW_ADAPTIVITY_EN_ENABLE 1
+ 
+-void rtw_odm_adaptivity_en_msg(void *sel, _adapter *adapter)
++static void rtw_odm_adaptivity_en_msg(void *sel, _adapter *adapter)
+ {
+ 	struct registry_priv *regsty = &adapter->registrypriv;
+ 
+@@ -89,7 +89,7 @@ void rtw_odm_adaptivity_en_msg(void *sel, _adapter *adapter)
+ #define RTW_ADAPTIVITY_MODE_NORMAL 0
+ #define RTW_ADAPTIVITY_MODE_CARRIER_SENSE 1
+ 
+-void rtw_odm_adaptivity_mode_msg(void *sel, _adapter *adapter)
++static void rtw_odm_adaptivity_mode_msg(void *sel, _adapter *adapter)
+ {
+ 	struct registry_priv *regsty = &adapter->registrypriv;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_p2p.c b/drivers/net/wireless/rtl8189fs/core/rtw_p2p.c
+index 26539dd..7353ddd 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_p2p.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_p2p.c
+@@ -18,7 +18,7 @@
+ 
+ #ifdef CONFIG_P2P
+ 
+-int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt)
++static int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt)
+ {
+ 	int found = 0, i = 0;
+ 
+@@ -31,7 +31,7 @@ int rtw_p2p_is_channel_list_ok(u8 desired_ch, u8 *ch_list, u8 ch_cnt)
+ 	return found ;
+ }
+ 
+-int is_any_client_associated(_adapter *padapter)
++static int is_any_client_associated(_adapter *padapter)
+ {
+ 	return padapter->stapriv.asoc_list_cnt ? _TRUE : _FALSE;
+ }
+@@ -2489,7 +2489,7 @@ u8 process_p2p_provdisc_resp(struct wifidirect_info *pwdinfo,  u8 *pframe)
+ 	return _TRUE;
+ }
+ 
+-u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt, u8 *peer_ch_list)
++static u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8 ch_cnt, u8 *peer_ch_list)
+ {
+ 	u8 i = 0, j = 0;
+ 	u8 temp = 0;
+@@ -2511,7 +2511,7 @@ u8 rtw_p2p_get_peer_ch_list(struct wifidirect_info *pwdinfo, u8 *ch_content, u8
+ 	return ch_no;
+ }
+ 
+-u8 rtw_p2p_ch_inclusion(_adapter *adapter, u8 *peer_ch_list, u8 peer_ch_num, u8 *ch_list_inclusioned)
++static u8 rtw_p2p_ch_inclusion(_adapter *adapter, u8 *peer_ch_list, u8 peer_ch_num, u8 *ch_list_inclusioned)
+ {
+ 	struct rf_ctl_t *rfctl = adapter_to_rfctl(adapter);
+ 	int	i = 0, j = 0, temp = 0;
+@@ -3006,7 +3006,7 @@ u8 process_p2p_presence_req(struct wifidirect_info *pwdinfo, u8 *pframe, uint le
+ 	return _TRUE;
+ }
+ 
+-void find_phase_handler(_adapter	*padapter)
++static void find_phase_handler(_adapter	*padapter)
+ {
+ 	struct wifidirect_info  *pwdinfo = &padapter->wdinfo;
+ 	struct mlme_priv		*pmlmepriv = &padapter->mlmepriv;
+@@ -3031,7 +3031,7 @@ void find_phase_handler(_adapter	*padapter)
+ 
+ void p2p_concurrent_handler(_adapter *padapter);
+ 
+-void restore_p2p_state_handler(_adapter	*padapter)
++static void restore_p2p_state_handler(_adapter	*padapter)
+ {
+ 	struct wifidirect_info  *pwdinfo = &padapter->wdinfo;
+ 
+@@ -3064,7 +3064,7 @@ void restore_p2p_state_handler(_adapter	*padapter)
+ 	}
+ }
+ 
+-void pre_tx_invitereq_handler(_adapter	*padapter)
++static void pre_tx_invitereq_handler(_adapter	*padapter)
+ {
+ 	struct wifidirect_info  *pwdinfo = &padapter->wdinfo;
+ 	u8	val8 = 1;
+@@ -3076,7 +3076,7 @@ void pre_tx_invitereq_handler(_adapter	*padapter)
+ 
+ }
+ 
+-void pre_tx_provdisc_handler(_adapter	*padapter)
++static void pre_tx_provdisc_handler(_adapter	*padapter)
+ {
+ 	struct wifidirect_info  *pwdinfo = &padapter->wdinfo;
+ 	u8	val8 = 1;
+@@ -3088,7 +3088,7 @@ void pre_tx_provdisc_handler(_adapter	*padapter)
+ 
+ }
+ 
+-void pre_tx_negoreq_handler(_adapter	*padapter)
++static void pre_tx_negoreq_handler(_adapter	*padapter)
+ {
+ 	struct wifidirect_info  *pwdinfo = &padapter->wdinfo;
+ 	u8	val8 = 1;
+@@ -3675,7 +3675,7 @@ static void rtw_cfg80211_adjust_p2pie_channel(_adapter *padapter, const u8 *fram
+ #endif
+ 
+ #ifdef CONFIG_WFD
+-u32 rtw_xframe_build_wfd_ie(struct xmit_frame *xframe)
++static u32 rtw_xframe_build_wfd_ie(struct xmit_frame *xframe)
+ {
+ 	_adapter *adapter = xframe->padapter;
+ 	struct wifidirect_info *wdinfo = &adapter->wdinfo;
+@@ -3753,7 +3753,7 @@ u32 rtw_xframe_build_wfd_ie(struct xmit_frame *xframe)
+ }
+ #endif /* CONFIG_WFD */
+ 
+-bool rtw_xframe_del_wfd_ie(struct xmit_frame *xframe)
++static bool rtw_xframe_del_wfd_ie(struct xmit_frame *xframe)
+ {
+ #define DBG_XFRAME_DEL_WFD_IE 0
+ 	u8 *frame = xframe->buf_addr + TXDESC_OFFSET;
+@@ -3825,7 +3825,7 @@ void rtw_xframe_chk_wfd_ie(struct xmit_frame *xframe)
+ #endif
+ }
+ 
+-u8 *dump_p2p_attr_ch_list(u8 *p2p_ie, uint p2p_ielen, u8 *buf, u32 buf_len)
++static u8 *dump_p2p_attr_ch_list(u8 *p2p_ie, uint p2p_ielen, u8 *buf, u32 buf_len)
+ {
+ 	uint attr_contentlen = 0;
+ 	u8 *pattr = NULL;
+@@ -3877,7 +3877,7 @@ u8 *dump_p2p_attr_ch_list(u8 *p2p_ie, uint p2p_ielen, u8 *buf, u32 buf_len)
+ /*
+  * return _TRUE if requester is GO, _FALSE if responder is GO
+  */
+-bool rtw_p2p_nego_intent_compare(u8 req, u8 resp)
++static bool rtw_p2p_nego_intent_compare(u8 req, u8 resp)
+ {
+ 	if (req >> 1 == resp >> 1)
+ 		return  req & 0x01 ? _TRUE : _FALSE;
+@@ -4705,7 +4705,7 @@ static void find_phase_timer_process(void *FunctionContext)
+ }
+ 
+ #ifdef CONFIG_CONCURRENT_MODE
+-void ap_p2p_switch_timer_process(void *FunctionContext)
++static void ap_p2p_switch_timer_process(void *FunctionContext)
+ {
+ 	_adapter *adapter = (_adapter *)FunctionContext;
+ 	struct	wifidirect_info		*pwdinfo = &adapter->wdinfo;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_pwrctrl.c b/drivers/net/wireless/rtl8189fs/core/rtw_pwrctrl.c
+index cca35bc..f7ecaf7 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_pwrctrl.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_pwrctrl.c
+@@ -194,7 +194,7 @@ int ips_leave(_adapter *padapter)
+ 	int rtw_hw_resume(_adapter *padapter);
+ #endif
+ 
+-bool rtw_pwr_unassociated_idle(_adapter *adapter)
++static bool rtw_pwr_unassociated_idle(_adapter *adapter)
+ {
+ 	u8 i;
+ 	_adapter *iface;
+@@ -394,7 +394,7 @@ exit:
+ 	return;
+ }
+ 
+-void pwr_state_check_handler(void *ctx)
++static void pwr_state_check_handler(void *ctx)
+ {
+ 	_adapter *padapter = (_adapter *)ctx;
+ 	rtw_ps_cmd(padapter);
+@@ -520,7 +520,7 @@ void	traffic_check_for_leave_lps(PADAPTER padapter, u8 tx, u32 tx_packets)
+ #define LPS_CPWM_TIMEOUT_MS	10 /*ms*/
+ #define LPS_RPWM_RETRY_CNT		3
+ 
+-u8 rtw_cpwm_polling(_adapter *adapter, u8 rpwm, u8 cpwm_orig)
++static u8 rtw_cpwm_polling(_adapter *adapter, u8 rpwm, u8 cpwm_orig)
+ {
+ 	u8 rst = _FAIL;
+ 	u8 cpwm_now = 0;
+@@ -684,7 +684,7 @@ u8 rtw_set_rpwm(PADAPTER padapter, u8 pslv)
+ 	return rpwm;
+ }
+ 
+-u8 PS_RDY_CHECK(_adapter *padapter)
++static u8 PS_RDY_CHECK(_adapter *padapter)
+ {
+ 	struct pwrctrl_priv	*pwrpriv = adapter_to_pwrctl(padapter);
+ 	struct mlme_priv	*pmlmepriv = &(padapter->mlmepriv);
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_recv.c b/drivers/net/wireless/rtl8189fs/core/rtw_recv.c
+index 5241608..d8ecc16 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_recv.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_recv.c
+@@ -16,6 +16,7 @@
+ 
+ #include <drv_types.h>
+ #include <hal_data.h>
++#include "rtw_recv.h"
+ 
+ #ifdef CONFIG_NEW_SIGNAL_STAT_PROCESS
+ static void rtw_signal_stat_timer_hdl(void *ctx);
+@@ -906,7 +907,7 @@ sint recv_decache(union recv_frame *precv_frame)
+ 	return _SUCCESS;
+ }
+ 
+-void process_pwrbit_data(_adapter *padapter, union recv_frame *precv_frame, struct sta_info *psta)
++static void process_pwrbit_data(_adapter *padapter, union recv_frame *precv_frame, struct sta_info *psta)
+ {
+ #ifdef CONFIG_AP_MODE
+ 	unsigned char pwrbit;
+@@ -934,7 +935,7 @@ void process_pwrbit_data(_adapter *padapter, union recv_frame *precv_frame, stru
+ #endif
+ }
+ 
+-void process_wmmps_data(_adapter *padapter, union recv_frame *precv_frame, struct sta_info *psta)
++static void process_wmmps_data(_adapter *padapter, union recv_frame *precv_frame, struct sta_info *psta)
+ {
+ #ifdef CONFIG_AP_MODE
+ 	struct rx_pkt_attrib *pattrib = &precv_frame->u.hdr.attrib;
+@@ -1167,7 +1168,7 @@ void count_rx_stats(_adapter *padapter, union recv_frame *prframe, struct sta_in
+ 
+ }
+ 
+-sint sta2sta_data_frame(
++static sint sta2sta_data_frame(
+ 	_adapter *adapter,
+ 	union recv_frame *precv_frame,
+ 	struct sta_info **psta
+@@ -1346,7 +1347,7 @@ exit:
+ 
+ }
+ 
+-sint ap2sta_data_frame(
++static sint ap2sta_data_frame(
+ 	_adapter *adapter,
+ 	union recv_frame *precv_frame,
+ 	struct sta_info **psta)
+@@ -1486,7 +1487,7 @@ exit:
+ 
+ }
+ 
+-sint sta2ap_data_frame(
++static sint sta2ap_data_frame(
+ 	_adapter *adapter,
+ 	union recv_frame *precv_frame,
+ 	struct sta_info **psta)
+@@ -2004,7 +2005,7 @@ exit:
+ 
+ }
+ 
+-sint validate_recv_data_frame(_adapter *adapter, union recv_frame *precv_frame)
++static sint validate_recv_data_frame(_adapter *adapter, union recv_frame *precv_frame)
+ {
+ 	u8 bretry, a4_shift;
+ 	struct sta_info *psta = NULL;
+@@ -2360,7 +2361,7 @@ exit:
+ 
+ 
+ /* remove the wlanhdr and add the eth_hdr */
+-sint wlanhdr_to_ethhdr(union recv_frame *precvframe)
++static sint wlanhdr_to_ethhdr(union recv_frame *precvframe)
+ {
+ 	sint	rmv_len;
+ 	u16	eth_type, len;
+@@ -2865,7 +2866,7 @@ exit:
+ }
+ #endif /* CONFIG_RTW_MESH */
+ 
+-int amsdu_to_msdu(_adapter *padapter, union recv_frame *prframe)
++static int amsdu_to_msdu(_adapter *padapter, union recv_frame *prframe)
+ {
+ 	struct rx_pkt_attrib *rattrib = &prframe->u.hdr.attrib;
+ 	int	a_len, padding_len;
+@@ -3513,7 +3514,7 @@ static void recv_set_iseq_after_mpdu_process(union recv_frame *rframe, u16 seq_n
+ }
+ 
+ #ifdef CONFIG_MP_INCLUDED
+-int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
++static int validate_mp_recv_frame(_adapter *adapter, union recv_frame *precv_frame)
+ {
+ 	int ret = _SUCCESS;
+ 	u8 *ptr = precv_frame->u.hdr.rx_data;
+@@ -3672,7 +3673,7 @@ static sint MPwlanhdr_to_ethhdr(union recv_frame *precvframe)
+ }
+ 
+ 
+-int mp_recv_frame(_adapter *padapter, union recv_frame *rframe)
++static int mp_recv_frame(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret = _SUCCESS;
+ 	struct rx_pkt_attrib *pattrib = &rframe->u.hdr.attrib;
+@@ -4110,7 +4111,7 @@ static sint fill_radiotap_hdr(_adapter *padapter, union recv_frame *precvframe,
+ 
+ }
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 24))
+-int recv_frame_monitor(_adapter *padapter, union recv_frame *rframe)
++static int recv_frame_monitor(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret = _SUCCESS;
+ 	_queue *pfree_recv_queue = &padapter->recvpriv.free_recv_queue;
+@@ -4156,7 +4157,7 @@ exit:
+ 	return ret;
+ }
+ #endif
+-int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
++static int recv_func_prehandle(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret = _SUCCESS;
+ #ifdef DBG_RX_COUNTER_DUMP
+@@ -4193,7 +4194,7 @@ exit:
+ }
+ 
+ /*#define DBG_RX_BMC_FRAME*/
+-int recv_func_posthandle(_adapter *padapter, union recv_frame *prframe)
++static int recv_func_posthandle(_adapter *padapter, union recv_frame *prframe)
+ {
+ 	int ret = _SUCCESS;
+ 	union recv_frame *orig_prframe = prframe;
+@@ -4301,7 +4302,7 @@ _recv_data_drop:
+ 	return ret;
+ }
+ 
+-int recv_func(_adapter *padapter, union recv_frame *rframe)
++static int recv_func(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	int ret;
+ 	struct rx_pkt_attrib *prxattrib = &rframe->u.hdr.attrib;
+@@ -4622,7 +4623,7 @@ static void rx_process_link_qual(_adapter *padapter, union recv_frame *prframe)
+ #endif /* CONFIG_NEW_SIGNAL_STAT_PROCESS */
+ }
+ 
+-void rx_process_phy_info(_adapter *padapter, union recv_frame *rframe)
++static void rx_process_phy_info(_adapter *padapter, union recv_frame *rframe)
+ {
+ 	/* Check RSSI */
+ 	rx_process_rssi(padapter, rframe);
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_rf.c b/drivers/net/wireless/rtl8189fs/core/rtw_rf.c
+index ad53c42..9da50ff 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_rf.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_rf.c
+@@ -577,7 +577,7 @@ const char *const _regd_str[] = {
+ };
+ 
+ #if CONFIG_TXPWR_LIMIT
+-void _dump_regd_exc_list(void *sel, struct rf_ctl_t *rfctl)
++static void _dump_regd_exc_list(void *sel, struct rf_ctl_t *rfctl)
+ {
+ 	struct regd_exc_ent *ent;
+ 	_list *cur, *head;
+@@ -1208,7 +1208,7 @@ int rtw_ch_to_bb_gain_sel(int ch)
+ 	return sel;
+ }
+ 
+-s8 rtw_rf_get_kfree_tx_gain_offset(_adapter *padapter, u8 path, u8 ch)
++static s8 rtw_rf_get_kfree_tx_gain_offset(_adapter *padapter, u8 path, u8 ch)
+ {
+ 	s8 kfree_offset = 0;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_sdio.c b/drivers/net/wireless/rtl8189fs/core/rtw_sdio.c
+index e8f49bf..efe7b0e 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_sdio.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_sdio.c
+@@ -16,6 +16,7 @@
+ 
+ #include <drv_types.h>		/* struct dvobj_priv and etc. */
+ #include <drv_types_sdio.h>	/* RTW_SDIO_ADDR_CMD52_GEN */
++#include "rtw_sdio.h"
+ 
+ /*
+  * Description:
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_security.c b/drivers/net/wireless/rtl8189fs/core/rtw_security.c
+index cb689ab..394658d 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_security.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_security.c
+@@ -15,6 +15,7 @@
+ #define  _RTW_SECURITY_C_
+ 
+ #include <drv_types.h>
++#include "rtw_security.h"
+ 
+ static const char *_security_type_str[] = {
+ 	"N/A",
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_sreset.c b/drivers/net/wireless/rtl8189fs/core/rtw_sreset.c
+index 64079db..f4302c9 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_sreset.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_sreset.c
+@@ -101,7 +101,7 @@ bool sreset_inprogress(_adapter *padapter)
+ #endif
+ }
+ 
+-void sreset_restore_security_station(_adapter *padapter)
++static void sreset_restore_security_station(_adapter *padapter)
+ {
+ 	struct mlme_priv *mlmepriv = &padapter->mlmepriv;
+ 	struct sta_priv *pstapriv = &padapter->stapriv;
+@@ -137,7 +137,7 @@ void sreset_restore_security_station(_adapter *padapter)
+ 	}
+ }
+ 
+-void sreset_restore_network_station(_adapter *padapter)
++static void sreset_restore_network_station(_adapter *padapter)
+ {
+ 	struct mlme_priv *mlmepriv = &padapter->mlmepriv;
+ 	struct mlme_ext_priv	*pmlmeext = &padapter->mlmeextpriv;
+@@ -197,7 +197,7 @@ void sreset_restore_network_station(_adapter *padapter)
+ }
+ 
+ 
+-void sreset_restore_network_status(_adapter *padapter)
++static void sreset_restore_network_status(_adapter *padapter)
+ {
+ 	struct mlme_priv *mlmepriv = &padapter->mlmepriv;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_sta_mgt.c b/drivers/net/wireless/rtl8189fs/core/rtw_sta_mgt.c
+index ce7c195..4eb044c 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_sta_mgt.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_sta_mgt.c
+@@ -16,7 +16,7 @@
+ 
+ #include <drv_types.h>
+ 
+-bool test_st_match_rule(_adapter *adapter, u8 *local_naddr, u8 *local_port, u8 *remote_naddr, u8 *remote_port)
++static bool test_st_match_rule(_adapter *adapter, u8 *local_naddr, u8 *local_port, u8 *remote_naddr, u8 *remote_port)
+ {
+ 	if (ntohs(*((u16 *)local_port)) == 5001 || ntohs(*((u16 *)remote_port)) == 5001)
+ 		return _TRUE;
+@@ -1070,7 +1070,7 @@ const char *const _acl_mode_str[RTW_ACL_MODE_MAX] = {
+ 	"DENY_UNLESS_LISTED",
+ };
+ 
+-u8 _rtw_access_ctrl(_adapter *adapter, u8 period, const u8 *mac_addr)
++static u8 _rtw_access_ctrl(_adapter *adapter, u8 period, const u8 *mac_addr)
+ {
+ 	u8 res = _TRUE;
+ 	_irqL irqL;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_wlan_util.c b/drivers/net/wireless/rtl8189fs/core/rtw_wlan_util.c
+index 1312d71..e2a7d33 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_wlan_util.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_wlan_util.c
+@@ -1026,7 +1026,7 @@ inline bool rtw_sec_camid_is_drv_forbid(struct cam_ctl_t *cam_ctl, u8 id)
+ 	return 1;
+ }
+ 
+-bool _rtw_sec_camid_is_used(struct cam_ctl_t *cam_ctl, u8 id)
++static bool _rtw_sec_camid_is_used(struct cam_ctl_t *cam_ctl, u8 id)
+ {
+ 	bool ret = _FALSE;
+ 
+@@ -1114,7 +1114,7 @@ inline bool rtw_camid_is_gk(_adapter *adapter, u8 cam_id)
+ 	return ret;
+ }
+ 
+-bool cam_cache_chk(_adapter *adapter, u8 id, u8 *addr, s16 kid, s8 gk)
++static bool cam_cache_chk(_adapter *adapter, u8 id, u8 *addr, s16 kid, s8 gk)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	bool ret = _FALSE;
+@@ -1132,7 +1132,7 @@ exit:
+ 	return ret;
+ }
+ 
+-s16 _rtw_camid_search(_adapter *adapter, u8 *addr, s16 kid, s8 gk)
++static s16 _rtw_camid_search(_adapter *adapter, u8 *addr, s16 kid, s8 gk)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	struct cam_ctl_t *cam_ctl = &dvobj->cam_ctl;
+@@ -1172,7 +1172,7 @@ s16 rtw_camid_search(_adapter *adapter, u8 *addr, s16 kid, s8 gk)
+ 	return cam_id;
+ }
+ 
+-s16 rtw_get_camid(_adapter *adapter, u8 *addr, s16 kid, u8 gk)
++static s16 rtw_get_camid(_adapter *adapter, u8 *addr, s16 kid, u8 gk)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	struct cam_ctl_t *cam_ctl = &dvobj->cam_ctl;
+@@ -1291,7 +1291,7 @@ bitmap_handle:
+ 	return cam_id;
+ }
+ 
+-void rtw_camid_set(_adapter *adapter, u8 cam_id)
++static void rtw_camid_set(_adapter *adapter, u8 cam_id)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	struct cam_ctl_t *cam_ctl = &dvobj->cam_ctl;
+@@ -1374,7 +1374,7 @@ inline void rtw_sec_cam_swap(_adapter *adapter, u8 cam_id_a, u8 cam_id_b)
+ 	}
+ }
+ 
+-s16 rtw_get_empty_cam_entry(_adapter *adapter, u8 start_camid)
++static s16 rtw_get_empty_cam_entry(_adapter *adapter, u8 start_camid)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	struct cam_ctl_t *cam_ctl = &dvobj->cam_ctl;
+@@ -2247,7 +2247,7 @@ void	update_ldpc_stbc_cap(struct sta_info *psta)
+ #endif /* CONFIG_80211N_HT */
+ }
+ 
+-int check_ielen(u8 *start, uint len)
++static int check_ielen(u8 *start, uint len)
+ {
+ 	int left = len;
+ 	u8 *pos = start;
+@@ -2472,7 +2472,7 @@ void rtw_debug_rx_bcn(_adapter *adapter, u8 *pframe, u32 packet_len)
+  *	WLAN_EID_CHANNEL_SWITCH
+  *	WLAN_EID_PWR_CONSTRAINT
+  */
+-int _rtw_get_bcn_keys(u8 *cap_info, u32 buf_len, u8 def_ch, ADAPTER *adapter
++static int _rtw_get_bcn_keys(u8 *cap_info, u32 buf_len, u8 def_ch, ADAPTER *adapter
+ 	, struct beacon_keys *recv_beacon)
+ {
+ 	int left;
+diff --git a/drivers/net/wireless/rtl8189fs/core/rtw_xmit.c b/drivers/net/wireless/rtl8189fs/core/rtw_xmit.c
+index 1465523..354efe2 100644
+--- a/drivers/net/wireless/rtl8189fs/core/rtw_xmit.c
++++ b/drivers/net/wireless/rtl8189fs/core/rtw_xmit.c
+@@ -16,6 +16,7 @@
+ 
+ #include <drv_types.h>
+ #include <hal_data.h>
++#include "rtw_xmit.h"
+ 
+ static u8 P802_1H_OUI[P80211_OUI_LEN] = { 0x00, 0x00, 0xf8 };
+ static u8 RFC1042_OUI[P80211_OUI_LEN] = { 0x00, 0x00, 0x00 };
+@@ -57,7 +58,7 @@ void rtw_init_xmit_block(_adapter *padapter)
+ 	dvobj->xmit_block = XMIT_BLOCK_NONE;
+ 
+ }
+-void rtw_free_xmit_block(_adapter *padapter)
++static void rtw_free_xmit_block(_adapter *padapter)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(padapter);
+ 
+@@ -506,7 +507,7 @@ void rtw_get_adapter_tx_rate_bmp_by_bw(_adapter *adapter, u8 bw, u16 *r_bmp_cck_
+ 		*r_bmp_vht = bmp_vht;
+ }
+ 
+-void rtw_get_shared_macid_tx_rate_bmp_by_bw(struct dvobj_priv *dvobj, u8 bw, u16 *r_bmp_cck_ofdm, u32 *r_bmp_ht, u32 *r_bmp_vht)
++static void rtw_get_shared_macid_tx_rate_bmp_by_bw(struct dvobj_priv *dvobj, u8 bw, u16 *r_bmp_cck_ofdm, u32 *r_bmp_ht, u32 *r_bmp_vht)
+ {
+ 	struct macid_ctl_t *macid_ctl = dvobj_to_macidctl(dvobj);
+ 	u16 bmp_cck_ofdm = 0;
+@@ -3508,7 +3509,7 @@ s32 rtw_free_xmitbuf(struct xmit_priv *pxmitpriv, struct xmit_buf *pxmitbuf)
+ 	return _SUCCESS;
+ }
+ 
+-void rtw_init_xmitframe(struct xmit_frame *pxframe)
++static void rtw_init_xmitframe(struct xmit_frame *pxframe)
+ {
+ 	if (pxframe !=  NULL) { /* default value setting */
+ 		pxframe->buf_addr = NULL;
+@@ -4182,7 +4183,7 @@ void rtw_init_hwxmits(struct hw_xmit *phwxmit, sint entry)
+ }
+ 
+ #ifdef CONFIG_BR_EXT
+-int rtw_br_client_tx(_adapter *padapter, struct sk_buff **pskb)
++static int rtw_br_client_tx(_adapter *padapter, struct sk_buff **pskb)
+ {
+ 	struct sk_buff *skb = *pskb;
+ 	_irqL irqL;
+@@ -6035,7 +6036,7 @@ int rtw_sctx_wait(struct submit_ctx *sctx, const char *msg)
+ 	return ret;
+ }
+ 
+-bool rtw_sctx_chk_waring_status(int status)
++static bool rtw_sctx_chk_waring_status(int status)
+ {
+ 	switch (status) {
+ 	case RTW_SCTX_DONE_UNKNOWN:
+diff --git a/drivers/net/wireless/rtl8189fs/hal/hal_com.c b/drivers/net/wireless/rtl8189fs/hal/hal_com.c
+index 6e5146a..4958e7c 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/hal_com.c
++++ b/drivers/net/wireless/rtl8189fs/hal/hal_com.c
+@@ -2168,7 +2168,7 @@ void rtw_hal_update_sta_wset(_adapter *adapter, struct sta_info *psta)
+ 	psta->cmn.support_wireless_set = w_set;
+ }
+ 
+-void rtw_hal_update_sta_mimo_type(_adapter *adapter, struct sta_info *psta)
++static void rtw_hal_update_sta_mimo_type(_adapter *adapter, struct sta_info *psta)
+ {
+ 	s8 tx_nss, rx_nss;
+ 
+@@ -2201,7 +2201,7 @@ void rtw_hal_update_sta_mimo_type(_adapter *adapter, struct sta_info *psta)
+ 			psta->cmn.mac_id, tx_nss, rx_nss);
+ }
+ 
+-void rtw_hal_update_sta_smps_cap(_adapter *adapter, struct sta_info *psta)
++static void rtw_hal_update_sta_smps_cap(_adapter *adapter, struct sta_info *psta)
+ {
+ 	/*Spatial Multiplexing Power Save*/
+ #if 0
+@@ -2239,7 +2239,7 @@ u8 rtw_get_mgntframe_raid(_adapter *adapter, unsigned char network_type)
+ 	return raid;
+ }
+ 
+-void rtw_hal_update_sta_rate_mask(PADAPTER padapter, struct sta_info *psta)
++static void rtw_hal_update_sta_rate_mask(PADAPTER padapter, struct sta_info *psta)
+ {
+ 	struct hal_spec_t *hal_spec = GET_HAL_SPEC(padapter);
+ 	u8 i, rf_type, tx_nss;
+@@ -4776,7 +4776,7 @@ inline s32 rtw_hal_set_FwMediaStatusRpt_range_cmd(_adapter *adapter, bool opmode
+ 	return rtw_hal_set_FwMediaStatusRpt_cmd(adapter, opmode, miracast, miracast_sink, role, macid, 1, macid_end);
+ }
+ 
+-void rtw_hal_set_FwRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvdpageloc)
++static void rtw_hal_set_FwRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvdpageloc)
+ {
+ 	struct	hal_ops *pHalFunc = &padapter->hal_func;
+ 	u8	u1H2CRsvdPageParm[H2C_RSVDPAGE_LOC_LEN] = {0};
+@@ -4921,7 +4921,7 @@ void rtw_hal_set_input_gpio(_adapter *padapter, u8 index)
+ 
+ #endif
+ 
+-void rtw_hal_set_FwAoacRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvdpageloc)
++static void rtw_hal_set_FwAoacRsvdPage_cmd(PADAPTER padapter, PRSVDPAGE_LOC rsvdpageloc)
+ {
+ 	struct	hal_ops *pHalFunc = &padapter->hal_func;
+ 	struct	pwrctrl_priv *pwrpriv = adapter_to_pwrctl(padapter);
+@@ -8022,7 +8022,7 @@ void rtw_hal_construct_NullFunctionData(
+ 	*pLength = pktlen;
+ }
+ 
+-void rtw_hal_construct_ProbeRsp(_adapter *padapter, u8 *pframe, u32 *pLength,
++static void rtw_hal_construct_ProbeRsp(_adapter *padapter, u8 *pframe, u32 *pLength,
+ 				BOOLEAN bHideSSID)
+ {
+ 	struct rtw_ieee80211_hdr	*pwlanhdr;
+@@ -15022,7 +15022,7 @@ void rtw_dump_phy_cap_by_phydmapi(void *sel, _adapter *adapter)
+ 	#endif
+ }
+ #else
+-void rtw_dump_phy_cap_by_hal(void *sel, _adapter *adapter)
++static void rtw_dump_phy_cap_by_hal(void *sel, _adapter *adapter)
+ {
+ 	u8 phy_cap = _FALSE;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/hal/hal_com_phycfg.c b/drivers/net/wireless/rtl8189fs/hal/hal_com_phycfg.c
+index 8e07ab9..0468691 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/hal_com_phycfg.c
++++ b/drivers/net/wireless/rtl8189fs/hal/hal_com_phycfg.c
+@@ -628,7 +628,7 @@ static inline void hal_init_pg_txpwr_info_5g(_adapter *adapter, TxPowerInfo5G *p
+ #define LOAD_PG_TXPWR_WARN_COND(_txpwr_src) (_txpwr_src > PG_TXPWR_SRC_PG_DATA)
+ #endif
+ 
+-u16 hal_load_pg_txpwr_info_path_2g(
++static u16 hal_load_pg_txpwr_info_path_2g(
+ 	_adapter *adapter,
+ 	TxPowerInfo24G	*pwr_info,
+ 	u32 path,
+@@ -756,7 +756,7 @@ exit:
+ 	return offset;
+ }
+ 
+-u16 hal_load_pg_txpwr_info_path_5g(
++static u16 hal_load_pg_txpwr_info_path_5g(
+ 	_adapter *adapter,
+ 	TxPowerInfo5G	*pwr_info,
+ 	u32 path,
+@@ -915,7 +915,7 @@ exit:
+ 	return offset;
+ }
+ 
+-void hal_load_pg_txpwr_info(
++static void hal_load_pg_txpwr_info(
+ 	_adapter *adapter,
+ 	TxPowerInfo24G *pwr_info_2g,
+ 	TxPowerInfo5G *pwr_info_5g,
+@@ -1335,7 +1335,7 @@ void dump_hal_txpwr_info_5g(void *sel, _adapter *adapter, u8 rfpath_num, u8 max_
+ *
+ * Return dBm or -1 for undefined
+ */
+-s8 rtw_regsty_get_target_tx_power(
++static s8 rtw_regsty_get_target_tx_power(
+ 		PADAPTER		Adapter,
+ 		u8				Band,
+ 		u8				RfPath,
+@@ -1379,7 +1379,7 @@ s8 rtw_regsty_get_target_tx_power(
+ 	return value;
+ }
+ 
+-bool rtw_regsty_chk_target_tx_power_valid(_adapter *adapter)
++static bool rtw_regsty_chk_target_tx_power_valid(_adapter *adapter)
+ {
+ 	struct hal_spec_t *hal_spec = GET_HAL_SPEC(adapter);
+ 	HAL_DATA_TYPE *hal_data = GET_HAL_DATA(adapter);
+@@ -1459,7 +1459,7 @@ PHY_GetTxPowerByRateBase(
+ 	return value;
+ }
+ 
+-void
++static void
+ phy_SetTxPowerByRateBase(
+ 		PADAPTER		Adapter,
+ 		u8				Band,
+@@ -1576,7 +1576,7 @@ static void phy_txpwr_by_rate_chk_for_path_dup(_adapter *adapter)
+ 	}
+ }
+ 
+-void
++static void
+ phy_StoreTxPowerByRateBase(
+ 		PADAPTER	pAdapter
+ )
+@@ -1982,7 +1982,7 @@ PHY_GetRateValuesOfTxPowerByRate(
+ 	};
+ }
+ 
+-void
++static void
+ PHY_StoreTxPowerByRateNew(
+ 		PADAPTER	pAdapter,
+ 		u32			Band,
+@@ -2050,7 +2050,7 @@ phy_store_tx_power_by_rate(
+ 
+ }
+ 
+-void
++static void
+ phy_ConvertTxPowerByRateInDbmToRelativeValues(
+ 		PADAPTER	pAdapter
+ )
+@@ -2180,7 +2180,7 @@ exit:
+ 	return;
+ }
+ 
+-bool phy_get_ch_idx(u8 ch, u8 *ch_idx)
++static bool phy_get_ch_idx(u8 ch, u8 *ch_idx)
+ {
+ 	u8  i = 0;
+ 	BOOLEAN bIn24G = _TRUE;
+@@ -3586,7 +3586,7 @@ static void phy_txpwr_lmt_post_hdl(_adapter *adapter)
+ 	_exit_critical_mutex(&rfctl->txpwr_lmt_mutex, &irqL);
+ }
+ 
+-BOOLEAN
++static BOOLEAN
+ GetS1ByteIntegerFromStringInDecimal(
+ 			char	*str,
+ 			s8		*val
+@@ -4307,7 +4307,7 @@ phy_ConfigBBWithParaFile(
+ 	return rtStatus;
+ }
+ 
+-void
++static void
+ phy_DecryptBBPgParaFile(
+ 	PADAPTER		Adapter,
+ 	char			*buffer
+@@ -4349,7 +4349,7 @@ phy_DecryptBBPgParaFile(
+ #define DBG_TXPWR_BY_RATE_FILE_PARSE 0
+ #endif
+ 
+-int
++static int
+ phy_ParseBBPgParaFile(
+ 	PADAPTER		Adapter,
+ 	char			*buffer
+@@ -4781,7 +4781,7 @@ PHY_ConfigRFWithParaFile(
+ 	return rtStatus;
+ }
+ 
+-void
++static void
+ initDeltaSwingIndexTables(
+ 	PADAPTER	Adapter,
+ 	char		*Band,
+diff --git a/drivers/net/wireless/rtl8189fs/hal/hal_dm.c b/drivers/net/wireless/rtl8189fs/hal/hal_dm.c
+index d4ca134..83dc2aa 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/hal_dm.c
++++ b/drivers/net/wireless/rtl8189fs/hal/hal_dm.c
+@@ -17,7 +17,7 @@
+ #include <hal_data.h>
+ 
+ /* A mapping from HalData to ODM. */
+-enum odm_board_type boardType(u8 InterfaceSel)
++static enum odm_board_type boardType(u8 InterfaceSel)
+ {
+ 	enum odm_board_type        board	= ODM_BOARD_DEFAULT;
+ 
+@@ -106,7 +106,7 @@ void rtw_phydm_iqk_trigger(_adapter *adapter)
+ }
+ #endif
+ 
+-void rtw_phydm_iqk_trigger_dbg(_adapter *adapter, bool recovery, bool clear, bool segment)
++static void rtw_phydm_iqk_trigger_dbg(_adapter *adapter, bool recovery, bool clear, bool segment)
+ {
+ 	struct dm_struct *p_dm_odm = adapter_to_phydm(adapter);
+ 
+@@ -116,7 +116,7 @@ void rtw_phydm_iqk_trigger_dbg(_adapter *adapter, bool recovery, bool clear, boo
+ 		halrf_iqk_trigger(p_dm_odm, recovery);
+ #endif
+ }
+-void rtw_phydm_lck_trigger(_adapter *adapter)
++static void rtw_phydm_lck_trigger(_adapter *adapter)
+ {
+ 	struct dm_struct *p_dm_odm = adapter_to_phydm(adapter);
+ 
+@@ -297,7 +297,7 @@ void rtw_phydm_tdmadig(_adapter *adapter, u8 state)
+ 	}
+ }
+ #endif/*CONFIG_TDMADIG*/
+-void rtw_phydm_ops_func_init(struct dm_struct *p_phydm)
++static void rtw_phydm_ops_func_init(struct dm_struct *p_phydm)
+ {
+ 	struct ra_table *p_ra_t = &p_phydm->dm_ra_table;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/hal/hal_intf.c b/drivers/net/wireless/rtl8189fs/hal/hal_intf.c
+index e838160..817b0a4 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/hal_intf.c
++++ b/drivers/net/wireless/rtl8189fs/hal/hal_intf.c
+@@ -256,7 +256,7 @@ void rtw_hal_power_off(_adapter *padapter)
+ }
+ 
+ 
+-void rtw_hal_init_opmode(_adapter *padapter)
++static void rtw_hal_init_opmode(_adapter *padapter)
+ {
+ 	NDIS_802_11_NETWORK_INFRASTRUCTURE networkType = Ndis802_11InfrastructureMax;
+ 	struct  mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+@@ -646,7 +646,7 @@ void	rtw_hal_free_recv_priv(_adapter *padapter)
+ 	padapter->hal_func.free_recv_priv(padapter);
+ }
+ 
+-void rtw_sta_ra_registed(_adapter *padapter, struct sta_info *psta)
++static void rtw_sta_ra_registed(_adapter *padapter, struct sta_info *psta)
+ {
+ 	struct mlme_priv *pmlmepriv = &(padapter->mlmepriv);
+ 	HAL_DATA_TYPE *hal_data = GET_HAL_DATA(padapter);
+diff --git a/drivers/net/wireless/rtl8189fs/hal/hal_mp.c b/drivers/net/wireless/rtl8189fs/hal/hal_mp.c
+index 09f9f34..0b3f601 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/hal_mp.c
++++ b/drivers/net/wireless/rtl8189fs/hal/hal_mp.c
+@@ -369,7 +369,7 @@ void hal_mpt_SetBandwidth(PADAPTER pAdapter)
+ 
+ }
+ 
+-void mpt_SetTxPower_Old(PADAPTER pAdapter, MPT_TXPWR_DEF Rate, u8 *pTxPower)
++static void mpt_SetTxPower_Old(PADAPTER pAdapter, MPT_TXPWR_DEF Rate, u8 *pTxPower)
+ {
+ 	switch (Rate) {
+ 	case MPT_CCK: {
+@@ -427,7 +427,7 @@ void mpt_SetTxPower_Old(PADAPTER pAdapter, MPT_TXPWR_DEF Rate, u8 *pTxPower)
+ 	RTW_INFO("<===mpt_SetTxPower_Old()\n");
+ }
+ 
+-void
++static void
+ mpt_SetTxPower(
+ 	PADAPTER		pAdapter,
+ 	MPT_TXPWR_DEF	Rate,
+@@ -1283,7 +1283,7 @@ void mpt_SetRFPath_8723D(PADAPTER pAdapter)
+ }
+ #endif
+ 
+-void mpt_SetRFPath_819X(PADAPTER	pAdapter)
++static void mpt_SetRFPath_819X(PADAPTER	pAdapter)
+ {
+ 	HAL_DATA_TYPE			*pHalData	= GET_HAL_DATA(pAdapter);
+ 	PMPT_CONTEXT		pMptCtx = &(pAdapter->mppriv.mpt_ctx);
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halphyrf_ce.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halphyrf_ce.c
+index 2077bc4..fba2856 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halphyrf_ce.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halphyrf_ce.c
+@@ -25,6 +25,7 @@
+ 
+ #include "mp_precomp.h"
+ #include "phydm_precomp.h"
++#include "halphyrf_win.h"
+ 
+ #define CALCULATE_SWINGTALBE_OFFSET(_offset, _direction, _size, _delta_thermal)\
+ 	do {                                                                   \
+@@ -158,7 +159,7 @@ void odm_clear_txpowertracking_state(void *dm_void)
+ 	cali_info->modify_tx_agc_value_ofdm = 0;
+ }
+ 
+-void odm_get_tracking_table(void *dm_void, u8 thermal_value, u8 delta)
++static void odm_get_tracking_table(void *dm_void, u8 thermal_value, u8 delta)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct dm_rf_calibration_struct *cali_info = &dm->rf_calibrate_info;
+@@ -358,7 +359,7 @@ void odm_get_tracking_table(void *dm_void, u8 thermal_value, u8 delta)
+ 	}
+ }
+ 
+-void odm_pwrtrk_method(void *dm_void)
++static void odm_pwrtrk_method(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u8 p, idxforchnl = 0;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf.c
+index 6d1baa6..ac72138 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf.c
+@@ -1019,7 +1019,7 @@ u64 halrf_cmn_info_get(void *dm_void, u32 cmn_info)
+ 	return return_value;
+ }
+ 
+-void halrf_supportability_init_mp(void *dm_void)
++static void halrf_supportability_init_mp(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct _hal_rf_ *rf = &dm->rf_table;
+@@ -1354,7 +1354,7 @@ void halrf_rf_k_connect_trigger(void *dm_void, boolean is_recovery,
+ 		halrf_dpk_reload(dm);
+ }
+ 
+-void halrf_dack_trigger(void *dm_void)
++static void halrf_dack_trigger(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct _hal_rf_ *rf = &dm->rf_table;
+@@ -1866,7 +1866,7 @@ void halrf_lck_trigger(void *dm_void)
+ 	}
+ }
+ 
+-void halrf_aac_check(struct dm_struct *dm)
++static void halrf_aac_check(struct dm_struct *dm)
+ {
+ 	switch (dm->support_ic_type) {
+ #if (RTL8821C_SUPPORT == 1)
+@@ -1888,7 +1888,7 @@ void halrf_aac_check(struct dm_struct *dm)
+ 	}
+ }
+ 
+-void halrf_x2k_check(struct dm_struct *dm)
++static void halrf_x2k_check(struct dm_struct *dm)
+ {
+ 
+ 	switch (dm->support_ic_type) {
+@@ -2592,7 +2592,7 @@ halrf_config_rfk_with_header_file(void *dm_void, u32 config_type)
+ 	return result;
+ }
+ 
+-void halrf_txgapk_trigger(void *dm_void)
++static void halrf_txgapk_trigger(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct _hal_rf_ *rf = &dm->rf_table;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_debug.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_debug.c
+index 882cf07..ab1d084 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_debug.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_debug.c
+@@ -31,7 +31,7 @@
+ #include "mp_precomp.h"
+ #include "phydm_precomp.h"
+ 
+-void halrf_basic_profile(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void halrf_basic_profile(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ #ifdef CONFIG_PHYDM_DEBUG_FUNCTION
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -75,7 +75,7 @@ void halrf_basic_profile(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ #endif
+ }
+ 
+-void halrf_debug_trace(void *dm_void, char input[][16], u32 *_used,
++static void halrf_debug_trace(void *dm_void, char input[][16], u32 *_used,
+ 		       char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_kfree.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_kfree.c
+index f1502b8..513d7f9 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_kfree.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_kfree.c
+@@ -32,7 +32,7 @@
+ /*@<YuChen, 150720> Add for KFree Feature Requested by RF David.*/
+ /*@This is a phydm API*/
+ 
+-void phydm_set_kfree_to_rf_8814a(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_set_kfree_to_rf_8814a(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct dm_rf_calibration_struct *cali_info = &dm->rf_calibrate_info;
+@@ -124,7 +124,7 @@ void phydm_set_kfree_to_rf_8814a(void *dm_void, u8 e_rf_path, u8 data)
+ 	}
+ }
+ 
+-void phydm_get_thermal_trim_offset_8821c(void *dm_void)
++static void phydm_get_thermal_trim_offset_8821c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -151,7 +151,7 @@ void phydm_get_thermal_trim_offset_8821c(void *dm_void)
+ 		       power_trim_info->thermal);
+ }
+ 
+-void phydm_get_power_trim_offset_8821c(void *dm_void)
++static void phydm_get_power_trim_offset_8821c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -188,7 +188,7 @@ void phydm_get_power_trim_offset_8821c(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, boolean wlg_btg,
++static void phydm_set_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, boolean wlg_btg,
+ 				 u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -223,7 +223,7 @@ void phydm_set_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, boolean wlg_btg,
+ 	       odm_get_rf_reg(dm, e_rf_path, RF_0x65, s_gain_bmask));
+ }
+ 
+-void phydm_clear_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_clear_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 gain_bmask = (BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14));
+@@ -252,7 +252,7 @@ void phydm_clear_kfree_to_rf_8821c(void *dm_void, u8 e_rf_path, u8 data)
+ 	       odm_get_rf_reg(dm, e_rf_path, RF_0x65, s_gain_bmask));
+ }
+ 
+-void phydm_get_thermal_trim_offset_8822b(void *dm_void)
++static void phydm_get_thermal_trim_offset_8822b(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -279,7 +279,7 @@ void phydm_get_thermal_trim_offset_8822b(void *dm_void)
+ 		       power_trim_info->thermal);
+ }
+ 
+-void phydm_get_power_trim_offset_8822b(void *dm_void)
++static void phydm_get_power_trim_offset_8822b(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -346,7 +346,7 @@ void phydm_get_power_trim_offset_8822b(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_pa_bias_to_rf_8822b(void *dm_void, u8 e_rf_path, s8 tx_pa_bias)
++static void phydm_set_pa_bias_to_rf_8822b(void *dm_void, u8 e_rf_path, s8 tx_pa_bias)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 rf_reg_51 = 0, rf_reg_52 = 0, rf_reg_3f = 0;
+@@ -405,7 +405,7 @@ void phydm_set_pa_bias_to_rf_8822b(void *dm_void, u8 e_rf_path, s8 tx_pa_bias)
+ 			      e_rf_path);
+ }
+ 
+-void phydm_get_pa_bias_offset_8822b(void *dm_void)
++static void phydm_get_pa_bias_offset_8822b(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -450,7 +450,7 @@ void phydm_get_pa_bias_offset_8822b(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_set_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 gain_bmask = (BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14));
+@@ -470,7 +470,7 @@ void phydm_set_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
+ 			      BIT(15) | BIT(14))), e_rf_path);
+ }
+ 
+-void phydm_clear_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_clear_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 gain_bmask = (BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14));
+@@ -497,7 +497,7 @@ void phydm_clear_kfree_to_rf_8822b(void *dm_void, u8 e_rf_path, u8 data)
+ 			      BIT(15) | BIT(14))), e_rf_path);
+ }
+ 
+-void phydm_get_thermal_trim_offset_8710b(void *dm_void)
++static void phydm_get_thermal_trim_offset_8710b(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -524,7 +524,7 @@ void phydm_get_thermal_trim_offset_8710b(void *dm_void)
+ 		       power_trim_info->thermal);
+ }
+ 
+-void phydm_get_power_trim_offset_8710b(void *dm_void)
++static void phydm_get_power_trim_offset_8710b(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -551,7 +551,7 @@ void phydm_get_power_trim_offset_8710b(void *dm_void)
+ 		       power_trim_info->bb_gain[0][0]);
+ }
+ 
+-void phydm_set_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_set_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 gain_bmask = (BIT(18) | BIT(17) | BIT(16) | BIT(15));
+@@ -565,7 +565,7 @@ void phydm_set_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
+ 			      BIT(15) | BIT(14))), e_rf_path);
+ }
+ 
+-void phydm_clear_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_clear_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 gain_bmask = (BIT(18) | BIT(17) | BIT(16) | BIT(15) | BIT(14));
+@@ -581,7 +581,7 @@ void phydm_clear_kfree_to_rf_8710b(void *dm_void, u8 e_rf_path, u8 data)
+ 			      BIT(15) | BIT(14))), e_rf_path);
+ }
+ 
+-void phydm_get_thermal_trim_offset_8192f(void *dm_void)
++static void phydm_get_thermal_trim_offset_8192f(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -608,7 +608,7 @@ void phydm_get_thermal_trim_offset_8192f(void *dm_void)
+ 		       power_trim_info->thermal);
+ }
+ 
+-void phydm_get_power_trim_offset_8192f(void *dm_void)
++static void phydm_get_power_trim_offset_8192f(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -677,7 +677,7 @@ void phydm_get_power_trim_offset_8192f(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_kfree_to_rf_8192f(void *dm_void, u8 e_rf_path, u8 channel_idx,
++static void phydm_set_kfree_to_rf_8192f(void *dm_void, u8 e_rf_path, u8 channel_idx,
+ 				 u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -765,7 +765,7 @@ void phydm_clear_kfree_to_rf_8192f(void *dm_void, u8 e_rf_path, u8 data)
+ */
+ #endif
+ 
+-void phydm_get_thermal_trim_offset_8198f(void *dm_void)
++static void phydm_get_thermal_trim_offset_8198f(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -792,7 +792,7 @@ void phydm_get_thermal_trim_offset_8198f(void *dm_void)
+ 		       power_trim_info->thermal);
+ }
+ 
+-void phydm_get_power_trim_offset_8198f(void *dm_void)
++static void phydm_get_power_trim_offset_8198f(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -843,7 +843,7 @@ void phydm_get_power_trim_offset_8198f(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_set_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -885,7 +885,7 @@ void phydm_set_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
+ 
+ }
+ 
+-void phydm_clear_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_clear_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -929,7 +929,7 @@ void phydm_clear_kfree_to_rf_8198f(void *dm_void, u8 e_rf_path, u8 data)
+ 
+ }
+ 
+-void phydm_get_set_thermal_trim_offset_8822c(void *dm_void)
++static void phydm_get_set_thermal_trim_offset_8822c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -969,7 +969,7 @@ void phydm_get_set_thermal_trim_offset_8822c(void *dm_void)
+ 			thermal[RF_PATH_B]);	
+ }
+ 
+-void phydm_set_power_trim_offset_8822c(void *dm_void)
++static void phydm_set_power_trim_offset_8822c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -1029,7 +1029,7 @@ void phydm_set_power_trim_offset_8822c(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_get_power_trim_offset_8822c(void *dm_void)
++static void phydm_get_power_trim_offset_8822c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -1130,7 +1130,7 @@ void phydm_get_power_trim_offset_8822c(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_get_set_pa_bias_offset_8822c(void *dm_void)
++static void phydm_get_set_pa_bias_offset_8822c(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *power_trim_info = &dm->power_trim_data;
+@@ -1185,7 +1185,7 @@ void phydm_get_set_pa_bias_offset_8822c(void *dm_void)
+ 
+ }
+ 
+-void phydm_do_new_kfree(void *dm_void)
++static void phydm_do_new_kfree(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -1198,7 +1198,7 @@ void phydm_do_new_kfree(void *dm_void)
+ 
+ 
+ 
+-void phydm_set_kfree_to_rf(void *dm_void, u8 e_rf_path, u8 data)
++static void phydm_set_kfree_to_rf(void *dm_void, u8 e_rf_path, u8 data)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -1316,7 +1316,7 @@ s8 phydm_get_thermal_offset(void *dm_void)
+ 		return 0;
+ }
+ 
+-void phydm_do_kfree(void *dm_void, u8 channel_to_sw)
++static void phydm_do_kfree(void *dm_void, u8 channel_to_sw)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_power_trim_data *pwrtrim = &dm->power_trim_data;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_psd.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_psd.c
+index ea21738..a9b8a72 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_psd.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/halrf_psd.c
+@@ -20,7 +20,7 @@
+ #include "mp_precomp.h"
+ #include "phydm_precomp.h"
+ 
+-u64 _sqrt(u64 x)
++static u64 _sqrt(u64 x)
+ {
+ 	u64 i = 0;
+ 	u64 j = (x >> 1) + 1;
+@@ -41,7 +41,7 @@ u64 _sqrt(u64 x)
+ 	return j;
+ }
+ 
+-u32 halrf_get_psd_data(
++static u32 halrf_get_psd_data(
+ 	struct dm_struct *dm,
+ 	u32 point)
+ {
+@@ -214,7 +214,7 @@ void halrf_psd(
+ 		odm_set_bb_reg(dm, psd_reg, 0x3000, avg_org);
+ }
+ 
+-void backup_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_reg, u32 counter)
++static void backup_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_reg, u32 counter)
+ {
+ 	u32 i ;
+ 
+@@ -222,7 +222,7 @@ void backup_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_reg
+ 		bb_backup[i] = odm_get_bb_reg(dm, backup_bb_reg[i], MASKDWORD);
+ }
+ 
+-void restore_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_reg, u32 counter)
++static void restore_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_reg, u32 counter)
+ {
+ 	u32 i ;
+ 
+@@ -232,7 +232,7 @@ void restore_bb_register(struct dm_struct *dm, u32 *bb_backup, u32 *backup_bb_re
+ 
+ 
+ 
+-void _halrf_psd_iqk_init(struct dm_struct *dm)
++static void _halrf_psd_iqk_init(struct dm_struct *dm)
+ {
+ 	odm_set_bb_reg(dm, 0x1b04, MASKDWORD, 0x0);
+ 	odm_set_bb_reg(dm, 0x1b08, MASKDWORD, 0x80);
+@@ -262,7 +262,7 @@ void _halrf_psd_iqk_init(struct dm_struct *dm)
+ }
+ 
+ 
+-u32 halrf_get_iqk_psd_data(
++static u32 halrf_get_iqk_psd_data(
+ 	struct dm_struct *dm,
+ 	u32 point)
+ {
+@@ -338,7 +338,7 @@ u32 halrf_get_iqk_psd_data(
+ 	return psd_val;
+ }
+ 
+-void halrf_iqk_psd(
++static void halrf_iqk_psd(
+ 	struct dm_struct *dm,
+ 	u32 point,
+ 	u32 start_point,
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/rtl8188f/halrf_8188f.c b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/rtl8188f/halrf_8188f.c
+index 413fcaf..4b93f1f 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/rtl8188f/halrf_8188f.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/halrf/rtl8188f/halrf_8188f.c
+@@ -60,7 +60,7 @@
+  * 3 Tx Power Tracking
+  * 3============================================================ */
+ 
+-void set_iqk_matrix_8188f(struct dm_struct *dm, s8 OFDM_index, u8 rf_path,
++static void set_iqk_matrix_8188f(struct dm_struct *dm, s8 OFDM_index, u8 rf_path,
+ 			  s32 iqk_result_x, s32 iqk_result_y)
+ {
+ 	s32 ele_A = 0, ele_D, ele_C = 0, value32;
+@@ -641,7 +641,7 @@ void odm_tx_pwr_track_set_pwr_8188f(void *dm_void, enum pwrtrack_method method,
+ 		return;
+ } /* odm_TxPwrTrackSetPwr8188F */
+ 
+-void get_delta_swing_table_8188f(void *dm_void, u8 **temperature_up_a,
++static void get_delta_swing_table_8188f(void *dm_void, u8 **temperature_up_a,
+ 				 u8 **temperature_down_a, u8 **temperature_up_b,
+ 				 u8 **temperature_down_b)
+ {
+@@ -731,7 +731,7 @@ void configure_txpower_track_8188f(struct txpwrtrack_cfg *config)
+ #define MAX_TOLERANCE 5
+ #define IQK_DELAY_TIME 1 /* ms */
+ 
+-u8 /* bit0 = 1 => Tx OK, bit1 = 1 => Rx OK */
++static u8 /* bit0 = 1 => Tx OK, bit1 = 1 => Rx OK */
+ 	phy_path_a_iqk_8188f(
+ 		struct dm_struct *dm,
+ 		boolean config_path_b)
+@@ -803,7 +803,7 @@ u8 /* bit0 = 1 => Tx OK, bit1 = 1 => Rx OK */
+ 	return result;
+ }
+ 
+-u8 /* bit0 = 1 => Tx OK, bit1 = 1 => Rx OK */
++static u8 /* bit0 = 1 => Tx OK, bit1 = 1 => Rx OK */
+ 	phy_path_a_rx_iqk_8188f(
+ 		struct dm_struct *dm,
+ 		boolean config_path_b)
+@@ -1211,7 +1211,7 @@ phy_path_b_rx_iqk_8188f(
+ }
+ #endif
+ 
+-void _phy_path_a_fill_iqk_matrix8188f(struct dm_struct *dm, boolean is_iqk_ok,
++static void _phy_path_a_fill_iqk_matrix8188f(struct dm_struct *dm, boolean is_iqk_ok,
+ 				      s32 result[][8], u8 final_candidate,
+ 				      boolean is_tx_only)
+ {
+@@ -1368,7 +1368,7 @@ _phy_path_b_fill_iqk_matrix8188f(
+ }
+ #endif
+ 
+-void _phy_save_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
++static void _phy_save_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
+ 				   u32 *adda_backup, u32 register_num)
+ {
+ 	u32 i;
+@@ -1381,7 +1381,7 @@ void _phy_save_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
+ 		adda_backup[i] = odm_get_bb_reg(dm, adda_reg[i], MASKDWORD);
+ }
+ 
+-void _phy_save_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
++static void _phy_save_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
+ 				  u32 *mac_backup)
+ {
+ 	u32 i;
+@@ -1391,7 +1391,7 @@ void _phy_save_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
+ 	mac_backup[i] = odm_read_4byte(dm, mac_reg[i]);
+ }
+ 
+-void _phy_reload_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
++static void _phy_reload_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
+ 				     u32 *adda_backup, u32 regiester_num)
+ {
+ 	u32 i;
+@@ -1401,7 +1401,7 @@ void _phy_reload_adda_registers8188f(struct dm_struct *dm, u32 *adda_reg,
+ 		odm_set_bb_reg(dm, adda_reg[i], MASKDWORD, adda_backup[i]);
+ }
+ 
+-void _phy_reload_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
++static void _phy_reload_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
+ 				    u32 *mac_backup)
+ {
+ 	u32 i;
+@@ -1411,7 +1411,7 @@ void _phy_reload_mac_registers8188f(struct dm_struct *dm, u32 *mac_reg,
+ 	odm_write_4byte(dm, mac_reg[i], mac_backup[i]);
+ }
+ 
+-void _phy_path_adda_on8188f(struct dm_struct *dm, u32 *adda_reg,
++static void _phy_path_adda_on8188f(struct dm_struct *dm, u32 *adda_reg,
+ 			    boolean is_path_a_on, boolean is2T)
+ {
+ 	u32 path_on;
+@@ -1429,7 +1429,7 @@ void _phy_path_adda_on8188f(struct dm_struct *dm, u32 *adda_reg,
+ 		odm_set_bb_reg(dm, adda_reg[i], MASKDWORD, path_on);
+ }
+ 
+-void _phy_mac_setting_calibration8188f(struct dm_struct *dm, u32 *mac_reg,
++static void _phy_mac_setting_calibration8188f(struct dm_struct *dm, u32 *mac_reg,
+ 				       u32 *mac_backup)
+ {
+ 	//u32 i = 0;
+@@ -1447,7 +1447,7 @@ void _phy_mac_setting_calibration8188f(struct dm_struct *dm, u32 *mac_reg,
+ #endif
+ }
+ 
+-void _phy_path_a_stand_by8188f(struct dm_struct *dm)
++static void _phy_path_a_stand_by8188f(struct dm_struct *dm)
+ {
+ 	RF_DBG(dm, DBG_RF_IQK, "path-A standby mode!\n");
+ 
+@@ -1459,7 +1459,7 @@ void _phy_path_a_stand_by8188f(struct dm_struct *dm)
+ 	odm_set_bb_reg(dm, REG_FPGA0_IQK, MASKH3BYTES, 0x808000);
+ }
+ 
+-void _phy_pi_mode_switch8188f(struct dm_struct *dm, boolean pi_mode)
++static void _phy_pi_mode_switch8188f(struct dm_struct *dm, boolean pi_mode)
+ {
+ 	u32 mode;
+ 	RF_DBG(dm, DBG_RF_IQK, "BB Switch to %s mode!\n",
+@@ -1470,7 +1470,7 @@ void _phy_pi_mode_switch8188f(struct dm_struct *dm, boolean pi_mode)
+ 	odm_set_bb_reg(dm, REG_FPGA0_XB_HSSI_PARAMETER1, MASKDWORD, mode);
+ }
+ 
+-boolean
++static boolean
+ phy_simularity_compare_8188f(struct dm_struct *dm, s32 result[][8], u8 c1,
+ 			     u8 c2)
+ {
+@@ -1568,7 +1568,7 @@ phy_simularity_compare_8188f(struct dm_struct *dm, s32 result[][8], u8 c1,
+ 	return false;
+ }
+ 
+-void _phy_iq_calibrate_8188f(struct dm_struct *dm, s32 result[][8], u8 t,
++static void _phy_iq_calibrate_8188f(struct dm_struct *dm, s32 result[][8], u8 t,
+ 			     boolean is2T)
+ {
+ 	u32 i;
+@@ -1841,7 +1841,7 @@ void _phy_iq_calibrate_8188f(struct dm_struct *dm, s32 result[][8], u8 t,
+ 	RF_DBG(dm, DBG_RF_IQK, "%s <==\n", __func__);
+ }
+ 
+-void _phy_lc_calibrate_8188f(struct dm_struct *dm, boolean is2T)
++static void _phy_lc_calibrate_8188f(struct dm_struct *dm, boolean is2T)
+ {
+ 	u8 tmp_reg;
+ 	u32 rf_bmode = 0, lc_cal, cnt;
+@@ -2111,7 +2111,7 @@ void phy_lc_calibrate_8188f(void *dm_void)
+ 	_phy_lc_calibrate_8188f(dm, false);
+ }
+ 
+-void _phy_set_rf_path_switch_8188f(
++static void _phy_set_rf_path_switch_8188f(
+ #if ((DM_ODM_SUPPORT_TYPE & ODM_AP) || (DM_ODM_SUPPORT_TYPE == ODM_CE))
+ 				   struct dm_struct *dm,
+ #else
+@@ -2199,7 +2199,7 @@ boolean phy_query_rf_path_switch_8188f(
+ }
+ #endif
+ 
+-u32 phy_psd_log2base(u32 val)
++static u32 phy_psd_log2base(u32 val)
+ {
+ 	u8 i, j;
+ 	u32 tmp, tmp2, val_integerdb = 0, tindex, shiftcount = 0;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm.c
+index ff81023..5e9a7d5 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm.c
+@@ -44,7 +44,7 @@ const u16 phy_rate_table[] = {
+ 	26, 52, 78, 104, 156, 208, 234, 260, 312, 360 /*@4ss MCS0~9*/
+ };
+ 
+-void phydm_traffic_load_decision(void *dm_void)
++static void phydm_traffic_load_decision(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u8 shift = 0;
+@@ -115,7 +115,7 @@ void phydm_traffic_load_decision(void *dm_void)
+ 	#endif
+ }
+ 
+-void phydm_cck_new_agc_chk(struct dm_struct *dm)
++static void phydm_cck_new_agc_chk(struct dm_struct *dm)
+ {
+ 	dm->cck_new_agc = 0;
+ 
+@@ -137,7 +137,7 @@ void phydm_cck_new_agc_chk(struct dm_struct *dm)
+ }
+ 
+ /*select 3 or 4 bit LNA */
+-void phydm_cck_lna_bit_num_chk(struct dm_struct *dm)
++static void phydm_cck_lna_bit_num_chk(struct dm_struct *dm)
+ {
+ 	boolean report_type = 0;
+ 	#if (RTL8192E_SUPPORT)
+@@ -182,7 +182,7 @@ void phydm_cck_lna_bit_num_chk(struct dm_struct *dm)
+ 		  dm->cck_agc_report_type);
+ }
+ 
+-void phydm_init_cck_setting(struct dm_struct *dm)
++static void phydm_init_cck_setting(struct dm_struct *dm)
+ {
+ 	u32 reg_tmp = 0;
+ 	u32 mask_tmp = 0;
+@@ -211,7 +211,7 @@ void phydm_init_cck_setting(struct dm_struct *dm)
+ 	phydm_get_cck_rssi_table_from_reg(dm);
+ }
+ 
+-void phydm_init_hw_info_by_rfe(struct dm_struct *dm)
++static void phydm_init_hw_info_by_rfe(struct dm_struct *dm)
+ {
+ #if (RTL8822B_SUPPORT)
+ 	/*@if (dm->support_ic_type & ODM_RTL8822B)*/
+@@ -227,7 +227,7 @@ void phydm_init_hw_info_by_rfe(struct dm_struct *dm)
+ #endif
+ }
+ 
+-void phydm_common_info_self_init(struct dm_struct *dm)
++static void phydm_common_info_self_init(struct dm_struct *dm)
+ {
+ 	u32 reg_tmp = 0;
+ 	u32 mask_tmp = 0;
+@@ -318,7 +318,7 @@ void phydm_common_info_self_init(struct dm_struct *dm)
+ 	}
+ }
+ 
+-void phydm_cmn_sta_info_update(void *dm_void, u8 macid)
++static void phydm_cmn_sta_info_update(void *dm_void, u8 macid)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct cmn_sta_info *sta = dm->phydm_sta_info[macid];
+@@ -346,7 +346,7 @@ void phydm_cmn_sta_info_update(void *dm_void, u8 macid)
+ 	ra->is_noisy = dm->noisy_decision;
+ }
+ 
+-void phydm_common_info_self_update(struct dm_struct *dm)
++static void phydm_common_info_self_update(struct dm_struct *dm)
+ {
+ 	u8 sta_cnt = 0, num_active_client = 0;
+ 	u32 i, one_entry_macid = 0;
+@@ -452,7 +452,7 @@ void phydm_common_info_self_update(struct dm_struct *dm)
+ 	dm->pre_is_linked = dm->is_linked;
+ }
+ 
+-void phydm_common_info_self_reset(struct dm_struct *dm)
++static void phydm_common_info_self_reset(struct dm_struct *dm)
+ {
+ 	struct odm_phy_dbg_info		*dbg_t = &dm->phy_dbg_info;
+ 
+@@ -495,7 +495,7 @@ phydm_get_structure(struct dm_struct *dm, u8 structure_type)
+ 	return structure;
+ }
+ 
+-void phydm_phy_info_update(struct dm_struct *dm)
++static void phydm_phy_info_update(struct dm_struct *dm)
+ {
+ #if (RTL8822B_SUPPORT == 1)
+ 	if (dm->support_ic_type == ODM_RTL8822B)
+@@ -503,7 +503,7 @@ void phydm_phy_info_update(struct dm_struct *dm)
+ #endif
+ }
+ 
+-void phydm_hw_setting(struct dm_struct *dm)
++static void phydm_hw_setting(struct dm_struct *dm)
+ {
+ #if (RTL8821A_SUPPORT == 1)
+ 	if (dm->support_ic_type & ODM_RTL8821)
+@@ -804,7 +804,7 @@ u64 phydm_supportability_init_win(
+ #endif
+ 
+ #if (DM_ODM_SUPPORT_TYPE & (ODM_CE))
+-u64 phydm_supportability_init_ce(void *dm_void)
++static u64 phydm_supportability_init_ce(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u64 support_ability = 0;
+@@ -1424,7 +1424,7 @@ void phydm_fwoffload_ability_clear(struct dm_struct *dm,
+ 		  dm->fw_offload_ability);
+ }
+ 
+-void phydm_supportability_init(void *dm_void)
++static void phydm_supportability_init(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u64 support_ability;
+@@ -1466,7 +1466,7 @@ void phydm_supportability_init(void *dm_void)
+ 		  dm->support_ic_type, *dm->mp_mode, dm->support_ability);
+ }
+ 
+-void phydm_rfe_init(void *dm_void)
++static void phydm_rfe_init(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -2000,7 +2000,7 @@ out:
+ 	*_out_len = out_len;
+ }
+ 
+-u8 phydm_stop_dm_watchdog_check(void *dm_void)
++static u8 phydm_stop_dm_watchdog_check(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_adaptivity.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_adaptivity.c
+index 03503e1..6376c41 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_adaptivity.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_adaptivity.c
+@@ -128,7 +128,7 @@ phydm_ap_num_check(void *dm_void)
+ }
+ #endif
+ 
+-void phydm_dig_up_bound_lmt_en(void *dm_void)
++static void phydm_dig_up_bound_lmt_en(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_adaptivity_struct *adapt = &dm->adaptivity;
+@@ -157,7 +157,7 @@ void phydm_dig_up_bound_lmt_en(void *dm_void)
+ 		  adapt->igi_up_bound_lmt_cnt);
+ }
+ 
+-void phydm_check_adaptivity(void *dm_void)
++static void phydm_check_adaptivity(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_adaptivity_struct *adapt = &dm->adaptivity;
+@@ -177,7 +177,7 @@ void phydm_check_adaptivity(void *dm_void)
+ #endif
+ }
+ 
+-void phydm_set_edcca_threshold(void *dm_void, s8 H2L, s8 L2H)
++static void phydm_set_edcca_threshold(void *dm_void, s8 H2L, s8 L2H)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -193,7 +193,7 @@ void phydm_set_edcca_threshold(void *dm_void, s8 H2L, s8 L2H)
+ 	}
+ }
+ 
+-void phydm_mac_edcca_state(void *dm_void, enum phydm_mac_edcca_type state)
++static void phydm_mac_edcca_state(void *dm_void, enum phydm_mac_edcca_type state)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -211,7 +211,7 @@ void phydm_mac_edcca_state(void *dm_void, enum phydm_mac_edcca_type state)
+ 	PHYDM_DBG(dm, DBG_ADPTVTY, "EDCCA enable state = %d\n", state);
+ }
+ 
+-void phydm_search_pwdb_lower_bound(void *dm_void)
++static void phydm_search_pwdb_lower_bound(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_adaptivity_struct *adapt = &dm->adaptivity;
+@@ -288,7 +288,7 @@ void phydm_search_pwdb_lower_bound(void *dm_void)
+ 	phydm_set_edcca_threshold(dm, 0x7f, 0x7f); /*resume to no link state*/
+ }
+ 
+-boolean
++static boolean
+ phydm_re_search_condition(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -301,7 +301,7 @@ phydm_re_search_condition(void *dm_void)
+ 		return false;
+ }
+ 
+-void phydm_set_l2h_th_ini(void *dm_void)
++static void phydm_set_l2h_th_ini(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -320,7 +320,7 @@ void phydm_set_l2h_th_ini(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_l2h_th_ini_carrier_sense(void *dm_void)
++static void phydm_set_l2h_th_ini_carrier_sense(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -330,7 +330,7 @@ void phydm_set_l2h_th_ini_carrier_sense(void *dm_void)
+ 		dm->th_l2h_ini = 0xa;
+ }
+ 
+-void phydm_set_forgetting_factor(void *dm_void)
++static void phydm_set_forgetting_factor(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -341,7 +341,7 @@ void phydm_set_forgetting_factor(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_pwdb_mode(void *dm_void)
++static void phydm_set_pwdb_mode(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -452,7 +452,7 @@ void phydm_set_edcca_val(void *dm_void, u32 *val_buf, u8 val_len)
+ 	phydm_set_edcca_threshold(dm, (s8)val_buf[1], (s8)val_buf[0]);
+ }
+ 
+-boolean phydm_edcca_abort(void *dm_void)
++static boolean phydm_edcca_abort(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_adaptivity_struct *adapt = &dm->adaptivity;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_api.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_api.c
+index eefa82a..eb44973 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_api.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_api.c
+@@ -144,7 +144,7 @@ void phydm_trx_antenna_setting_init(void *dm_void, u8 num_rf_path)
+ 		  __func__, dm->tx_ant_status, dm->rx_ant_status);
+ }
+ 
+-void phydm_config_ofdm_tx_path(void *dm_void, u32 path)
++static void phydm_config_ofdm_tx_path(void *dm_void, u32 path)
+ {
+ #if (RTL8192E_SUPPORT || RTL8812A_SUPPORT)
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -317,7 +317,7 @@ void phydm_config_cck_rx_path(void *dm_void, enum bb_path path)
+ #endif
+ }
+ 
+-void phydm_config_cck_tx_path(void *dm_void, enum bb_path path)
++static void phydm_config_cck_tx_path(void *dm_void, enum bb_path path)
+ {
+ #if (defined(PHYDM_COMPILE_ABOVE_2SS))
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -331,7 +331,7 @@ void phydm_config_cck_tx_path(void *dm_void, enum bb_path path)
+ #endif
+ }
+ 
+-void phydm_config_trx_path_v2(void *dm_void, char input[][16], u32 *_used,
++static void phydm_config_trx_path_v2(void *dm_void, char input[][16], u32 *_used,
+ 			      char *output, u32 *_out_len)
+ {
+ #if (RTL8822B_SUPPORT || RTL8197F_SUPPORT || RTL8192F_SUPPORT ||\
+@@ -394,7 +394,7 @@ void phydm_config_trx_path_v2(void *dm_void, char input[][16], u32 *_used,
+ #endif
+ }
+ 
+-void phydm_config_trx_path_v1(void *dm_void, char input[][16], u32 *_used,
++static void phydm_config_trx_path_v1(void *dm_void, char input[][16], u32 *_used,
+ 			      char *output, u32 *_out_len)
+ {
+ #if (RTL8192E_SUPPORT || RTL8812A_SUPPORT)
+@@ -764,7 +764,7 @@ void phydm_set_ext_switch(void *dm_void, u32 ext_ant_switch)
+ #endif
+ }
+ 
+-void phydm_csi_mask_enable(void *dm_void, u32 enable)
++static void phydm_csi_mask_enable(void *dm_void, u32 enable)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	boolean en = false;
+@@ -788,7 +788,7 @@ void phydm_csi_mask_enable(void *dm_void, u32 enable)
+ 	}
+ }
+ 
+-void phydm_clean_all_csi_mask(void *dm_void)
++static void phydm_clean_all_csi_mask(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -827,7 +827,7 @@ void phydm_clean_all_csi_mask(void *dm_void)
+ 	}
+ }
+ 
+-void phydm_set_csi_mask(void *dm_void, u32 tone_idx_tmp, u8 tone_direction)
++static void phydm_set_csi_mask(void *dm_void, u32 tone_idx_tmp, u8 tone_direction)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u8 byte_offset = 0, bit_offset = 0;
+@@ -886,7 +886,7 @@ void phydm_set_csi_mask(void *dm_void, u32 tone_idx_tmp, u8 tone_direction)
+ 		  (tone_idx_tmp + tone_num_shift), target_reg, reg_tmp_value);
+ }
+ 
+-void phydm_set_nbi_reg(void *dm_void, u32 tone_idx_tmp, u32 bw)
++static void phydm_set_nbi_reg(void *dm_void, u32 tone_idx_tmp, u32 bw)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	/*tone_idx X 10*/
+@@ -981,7 +981,7 @@ void phydm_nbi_enable(void *dm_void, u32 enable)
+ 	}
+ }
+ 
+-u8 phydm_find_fc(void *dm_void, u32 channel, u32 bw, u32 second_ch, u32 *fc_in)
++static u8 phydm_find_fc(void *dm_void, u32 channel, u32 bw, u32 second_ch, u32 *fc_in)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 fc = *fc_in;
+@@ -1056,7 +1056,7 @@ u8 phydm_find_fc(void *dm_void, u32 channel, u32 bw, u32 second_ch, u32 *fc_in)
+ 	return PHYDM_SET_SUCCESS;
+ }
+ 
+-u8 phydm_find_intf_distance(void *dm_void, u32 bw, u32 fc, u32 f_interference,
++static u8 phydm_find_intf_distance(void *dm_void, u32 bw, u32 fc, u32 f_interference,
+ 			    u32 *tone_idx_tmp_in)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_auto_dbg.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_auto_dbg.c
+index bd77799..2b8e0ef 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_auto_dbg.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_auto_dbg.c
+@@ -32,7 +32,7 @@
+ 
+ #ifdef PHYDM_AUTO_DEGBUG
+ 
+-void phydm_check_hang_reset(
++static void phydm_check_hang_reset(
+ 	void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -44,7 +44,7 @@ void phydm_check_hang_reset(
+ 	dm->debug_components &= (~ODM_COMP_API);
+ }
+ 
+-void phydm_check_hang_init(
++static void phydm_check_hang_init(
+ 	void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -56,7 +56,7 @@ void phydm_check_hang_init(
+ }
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT == 1)
+-void phydm_auto_check_hang_engine_n(
++static void phydm_auto_check_hang_engine_n(
+ 	void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -302,7 +302,7 @@ void phydm_auto_check_hang_engine_n(
+ 	atd_t->dbg_step++;
+ }
+ 
+-void phydm_bb_auto_check_hang_start_n(
++static void phydm_bb_auto_check_hang_start_n(
+ 	void *dm_void,
+ 	u32 *_used,
+ 	char *output,
+@@ -330,7 +330,7 @@ void phydm_bb_auto_check_hang_start_n(
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_dbg_port_dump_n(void *dm_void, u32 *_used, char *output,
++static void phydm_dbg_port_dump_n(void *dm_void, u32 *_used, char *output,
+ 			   u32 *_out_len)
+ {
+ 	u32 value32 = 0;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cck_pd.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cck_pd.c
+index 8f5229a..f56e32e 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cck_pd.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cck_pd.c
+@@ -32,7 +32,7 @@
+ 
+ #ifdef PHYDM_SUPPORT_CCKPD
+ #ifdef PHYDM_COMPILE_CCKPD_TYPE1
+-void phydm_write_cck_pd_type1(void *dm_void, u8 cca_th)
++static void phydm_write_cck_pd_type1(void *dm_void, u8 cca_th)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_cckpd_struct *cckpd_t = &dm->dm_cckpd_table;
+@@ -44,7 +44,7 @@ void phydm_write_cck_pd_type1(void *dm_void, u8 cca_th)
+ 	cckpd_t->cur_cck_cca_thres = cca_th;
+ }
+ 
+-void phydm_set_cckpd_lv_type1(void *dm_void, enum cckpd_lv lv)
++static void phydm_set_cckpd_lv_type1(void *dm_void, enum cckpd_lv lv)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_cckpd_struct *cckpd_t = &dm->dm_cckpd_table;
+@@ -75,7 +75,7 @@ void phydm_set_cckpd_lv_type1(void *dm_void, enum cckpd_lv lv)
+ 	phydm_write_cck_pd_type1(dm, pd_th);
+ }
+ 
+-void phydm_cckpd_type1(void *dm_void)
++static void phydm_cckpd_type1(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -952,7 +952,7 @@ void phydm_set_cckpd_val(void *dm_void, u32 *val_buf, u8 val_len)
+ 	}
+ }
+ 
+-boolean
++static boolean
+ phydm_stop_cck_pd_th(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_ccx.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_ccx.c
+index b253c08..873ac4d 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_ccx.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_ccx.c
+@@ -26,7 +26,7 @@
+ #include "mp_precomp.h"
+ #include "phydm_precomp.h"
+ 
+-void phydm_ccx_hw_restart(void *dm_void)
++static void phydm_ccx_hw_restart(void *dm_void)
+ 			  /*@Will Restart NHM/CLM/FAHM simultaneously*/
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -328,7 +328,7 @@ void phydm_fahm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
+ 
+ #ifdef NHM_SUPPORT
+ 
+-void phydm_nhm_racing_release(void *dm_void)
++static void phydm_nhm_racing_release(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -348,7 +348,7 @@ void phydm_nhm_racing_release(void *dm_void)
+ 	ccx->nhm_app = NHM_BACKGROUND;
+ }
+ 
+-u8 phydm_nhm_racing_ctrl(void *dm_void, enum phydm_nhm_level nhm_lv)
++static u8 phydm_nhm_racing_ctrl(void *dm_void, enum phydm_nhm_level nhm_lv)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -397,7 +397,7 @@ void phydm_nhm_trigger(void *dm_void)
+ 	ccx->nhm_ongoing = true;
+ }
+ 
+-boolean
++static boolean
+ phydm_nhm_check_rdy(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -487,7 +487,7 @@ phydm_nhm_check_rdy(void *dm_void)
+ 	return is_ready;
+ }
+ 
+-void phydm_nhm_get_utility(void *dm_void)
++static void phydm_nhm_get_utility(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -504,7 +504,7 @@ void phydm_nhm_get_utility(void *dm_void)
+ 	PHYDM_DBG(dm, DBG_ENV_MNTR, "nhm_ratio=%d\n", ccx->nhm_ratio);
+ }
+ 
+-boolean
++static boolean
+ phydm_nhm_get_result(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -630,7 +630,7 @@ phydm_nhm_get_result(void *dm_void)
+ 	return true;
+ }
+ 
+-void phydm_nhm_set_th_reg(void *dm_void)
++static void phydm_nhm_set_th_reg(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -680,7 +680,7 @@ void phydm_nhm_set_th_reg(void *dm_void)
+ 		  ccx->nhm_th[1], ccx->nhm_th[0]);
+ }
+ 
+-boolean
++static boolean
+ phydm_nhm_th_update_chk(void *dm_void, enum nhm_application nhm_app, u8 *nhm_th,
+ 			u32 *igi_new)
+ {
+@@ -787,7 +787,7 @@ phydm_nhm_th_update_chk(void *dm_void, enum nhm_application nhm_app, u8 *nhm_th,
+ 	return is_update;
+ }
+ 
+-void phydm_nhm_set(void *dm_void, enum nhm_option_txon_all include_tx,
++static void phydm_nhm_set(void *dm_void, enum nhm_option_txon_all include_tx,
+ 		   enum nhm_option_cca_all include_cca,
+ 		   enum nhm_divider_opt_all divi_opt,
+ 		   enum nhm_application nhm_app, u16 period)
+@@ -878,7 +878,7 @@ void phydm_nhm_set(void *dm_void, enum nhm_option_txon_all include_tx,
+ 	}
+ }
+ 
+-u8 phydm_nhm_mntr_set(void *dm_void, struct nhm_para_info *nhm_para)
++static u8 phydm_nhm_mntr_set(void *dm_void, struct nhm_para_info *nhm_para)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u16 nhm_time = 0; /*unit: 4us*/
+@@ -1198,7 +1198,7 @@ phydm_nhm_dym_pw_th_patch_id_chk(void *dm_void)
+ #endif
+ 
+ /*@Environment Monitor*/
+-boolean
++static boolean
+ phydm_nhm_mntr_chk(void *dm_void, u16 monitor_time /*unit ms*/)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1455,7 +1455,7 @@ void phydm_nhm_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
+ 
+ #ifdef CLM_SUPPORT
+ 
+-void phydm_clm_racing_release(void *dm_void)
++static void phydm_clm_racing_release(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -1468,7 +1468,7 @@ void phydm_clm_racing_release(void *dm_void)
+ 	ccx->clm_app = CLM_BACKGROUND;
+ }
+ 
+-u8 phydm_clm_racing_ctrl(void *dm_void, enum phydm_clm_level clm_lv)
++static u8 phydm_clm_racing_ctrl(void *dm_void, enum phydm_clm_level clm_lv)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -1707,7 +1707,7 @@ phydm_clm_get_result(void *dm_void)
+ 	return true;
+ }
+ 
+-void phydm_clm_mntr_fw(void *dm_void, u16 monitor_time /*unit ms*/)
++static void phydm_clm_mntr_fw(void *dm_void, u16 monitor_time /*unit ms*/)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+@@ -1767,7 +1767,7 @@ u8 phydm_clm_mntr_set(void *dm_void, struct clm_para_info *clm_para)
+ 	return PHYDM_SET_SUCCESS;
+ }
+ 
+-boolean
++static boolean
+ phydm_clm_mntr_chk(void *dm_void, u16 monitor_time /*unit ms*/)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1830,7 +1830,7 @@ void phydm_set_clm_mntr_mode(void *dm_void, enum clm_monitor_mode mode)
+ 	}
+ }
+ 
+-void phydm_clm_init(void *dm_void)
++static void phydm_clm_init(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ccx_info *ccx = &dm->dm_ccx_info;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cfotracking.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cfotracking.c
+index 2df2c05..9071470 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cfotracking.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_cfotracking.c
+@@ -25,7 +25,7 @@
+ #include "mp_precomp.h"
+ #include "phydm_precomp.h"
+ 
+-s32 phydm_get_cfo_hz(void *dm_void, u32 val, u8 bit_num, u8 frac_num)
++static s32 phydm_get_cfo_hz(void *dm_void, u32 val, u8 bit_num, u8 frac_num)
+ {
+ 	s32 val_s = 0;
+ 
+@@ -93,7 +93,7 @@ void phydm_get_cfo_info_ac(void *dm_void, struct phydm_cfo_rpt *cfo)
+ #endif
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-void phydm_get_cfo_info_n(void *dm_void, struct phydm_cfo_rpt *cfo)
++static void phydm_get_cfo_info_n(void *dm_void, struct phydm_cfo_rpt *cfo)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 val[5] = {0};
+@@ -147,7 +147,7 @@ void phydm_get_cfo_info_n(void *dm_void, struct phydm_cfo_rpt *cfo)
+ 	#endif
+ }
+ 
+-void phydm_set_atc_status(void *dm_void, boolean atc_status)
++static void phydm_set_atc_status(void *dm_void, boolean atc_status)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_cfo_track_struct *cfo_track = &dm->dm_cfo_track;
+@@ -165,7 +165,7 @@ void phydm_set_atc_status(void *dm_void, boolean atc_status)
+ 	cfo_track->is_atc_status = atc_status;
+ }
+ 
+-boolean
++static boolean
+ phydm_get_atc_status(void *dm_void)
+ {
+ 	boolean atc_status = false;
+@@ -311,7 +311,7 @@ void phydm_set_crystal_cap(void *dm_void, u8 crystal_cap)
+ 		PHYDM_DBG(dm, DBG_CFO_TRK, "Set fail\n");
+ }
+ 
+-void phydm_cfo_tracking_reset(void *dm_void)
++static void phydm_cfo_tracking_reset(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_cfo_track_struct *cfo_track = &dm->dm_cfo_track;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_debug.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_debug.c
+index 668cf35..e80e471 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_debug.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_debug.c
+@@ -101,7 +101,7 @@ void phydm_bb_dbg_port_header_sel(void *dm_void, u32 header_idx)
+ 	}
+ }
+ 
+-void phydm_bb_dbg_port_clock_en(void *dm_void, u8 enable)
++static void phydm_bb_dbg_port_clock_en(void *dm_void, u8 enable)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 reg_value = 0;
+@@ -186,7 +186,7 @@ u32 phydm_get_bb_dbg_port_val(void *dm_void)
+ 
+ #ifdef CONFIG_PHYDM_DEBUG_FUNCTION
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-void phydm_bb_hw_dbg_info_n(void *dm_void, u32 *_used, char *output,
++static void phydm_bb_hw_dbg_info_n(void *dm_void, u32 *_used, char *output,
+ 			    u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -942,7 +942,7 @@ u8 phydm_get_l_sig_rate(void *dm_void, u8 rate_idx_l_sig)
+ 	return rate_idx;
+ }
+ 
+-void phydm_bb_hw_dbg_info(void *dm_void, char input[][16], u32 *_used,
++static void phydm_bb_hw_dbg_info(void *dm_void, char input[][16], u32 *_used,
+ 			  char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1747,7 +1747,7 @@ void phydm_rx_rate_distribution(void *dm_void)
+ #endif
+ }
+ 
+-u16 phydm_rx_utility(void *dm_void, u16 avg_phy_rate, u8 rx_max_ss,
++static u16 phydm_rx_utility(void *dm_void, u16 avg_phy_rate, u8 rx_max_ss,
+ 		     enum channel_width bw)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1844,7 +1844,7 @@ u16 phydm_rx_avg_phy_rate(void *dm_void)
+ 	return avg_phy_rate;
+ }
+ 
+-void phydm_print_hist_2_buf(void *dm_void, u16 *val, u16 len, char *buf,
++static void phydm_print_hist_2_buf(void *dm_void, u16 *val, u16 len, char *buf,
+ 			    u16 buf_size)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1864,7 +1864,7 @@ void phydm_print_hist_2_buf(void *dm_void, u16 *val, u16 len, char *buf,
+ 	}
+ }
+ 
+-void phydm_nss_hitogram(void *dm_void, enum PDM_RATE_TYPE rate_type)
++static void phydm_nss_hitogram(void *dm_void, enum PDM_RATE_TYPE rate_type)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_phy_dbg_info *dbg_i = &dm->phy_dbg_info;
+@@ -1952,7 +1952,7 @@ void phydm_show_phy_hitogram(void *dm_void)
+ 	#endif
+ }
+ 
+-void phydm_avg_phy_val_nss(void *dm_void, u8 nss)
++static void phydm_avg_phy_val_nss(void *dm_void, u8 nss)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_phy_dbg_info *dbg_i = &dm->phy_dbg_info;
+@@ -2162,7 +2162,7 @@ void phydm_get_phy_statistic(void *dm_void)
+ 	phydm_reset_phystatus_statistic(dm);
+ };
+ 
+-void phydm_basic_dbg_msg_linked(void *dm_void)
++static void phydm_basic_dbg_msg_linked(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_cfo_track_struct *cfo_t = &dm->dm_cfo_track;
+@@ -2827,7 +2827,7 @@ void phydm_fw_trace_en_h2c(void *dm_void, boolean enable,
+ 	odm_fill_h2c_cmd(dm, PHYDM_H2C_FW_TRACE_EN, cmd_length, h2c_parameter);
+ }
+ 
+-void phydm_get_per_path_txagc(void *dm_void, u8 path, u32 *_used, char *output,
++static void phydm_get_per_path_txagc(void *dm_void, u8 path, u32 *_used, char *output,
+ 			      u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -2901,7 +2901,7 @@ void phydm_get_per_path_txagc(void *dm_void, u8 path, u32 *_used, char *output,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_get_txagc(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void phydm_get_txagc(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 used = *_used;
+@@ -2931,7 +2931,7 @@ void phydm_get_txagc(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_set_txagc(void *dm_void, u32 *const val, u32 *_used,
++static void phydm_set_txagc(void *dm_void, u32 *const val, u32 *_used,
+ 		     char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3011,7 +3011,7 @@ void phydm_set_txagc(void *dm_void, u32 *const val, u32 *_used,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_shift_txagc(void *dm_void, u32 *const val, u32 *_used, char *output,
++static void phydm_shift_txagc(void *dm_void, u32 *const val, u32 *_used, char *output,
+ 		       u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3123,7 +3123,7 @@ void phydm_shift_txagc(void *dm_void, u32 *const val, u32 *_used, char *output,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_set_txagc_dbg(void *dm_void, char input[][16], u32 *_used,
++static void phydm_set_txagc_dbg(void *dm_void, char input[][16], u32 *_used,
+ 			 char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3181,7 +3181,7 @@ void phydm_set_txagc_dbg(void *dm_void, char input[][16], u32 *_used,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_debug_trace(void *dm_void, char input[][16], u32 *_used,
++static void phydm_debug_trace(void *dm_void, char input[][16], u32 *_used,
+ 		       char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3337,7 +3337,7 @@ void phydm_debug_trace(void *dm_void, char input[][16], u32 *_used,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_fw_debug_trace(void *dm_void, char input[][16], u32 *_used,
++static void phydm_fw_debug_trace(void *dm_void, char input[][16], u32 *_used,
+ 			  char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3396,7 +3396,7 @@ void phydm_fw_debug_trace(void *dm_void, char input[][16], u32 *_used,
+ }
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-void phydm_dump_bb_reg_n(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void phydm_dump_bb_reg_n(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 addr = 0;
+@@ -3599,7 +3599,7 @@ void phydm_get_per_path_anapar_jgr3(void *dm_void, u8 path, u32 *_used,
+ 
+ #endif
+ 
+-void phydm_dump_bb_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void phydm_dump_bb_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 used = *_used;
+@@ -3637,7 +3637,7 @@ void phydm_dump_bb_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_dump_rf_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void phydm_dump_rf_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 addr = 0;
+@@ -3701,7 +3701,7 @@ void phydm_dump_rf_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_dump_mac_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
++static void phydm_dump_mac_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 addr = 0;
+@@ -3726,7 +3726,7 @@ void phydm_dump_mac_reg(void *dm_void, u32 *_used, char *output, u32 *_out_len)
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_dump_reg(void *dm_void, char input[][16], u32 *_used, char *output,
++static void phydm_dump_reg(void *dm_void, char input[][16], u32 *_used, char *output,
+ 		    u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -3774,7 +3774,7 @@ void phydm_dump_reg(void *dm_void, char input[][16], u32 *_used, char *output,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_enable_big_jump(void *dm_void, char input[][16], u32 *_used,
++static void phydm_enable_big_jump(void *dm_void, char input[][16], u32 *_used,
+ 			   char *output, u32 *_out_len)
+ {
+ #if (RTL8822B_SUPPORT)
+@@ -3811,7 +3811,7 @@ void phydm_enable_big_jump(void *dm_void, char input[][16], u32 *_used,
+ #endif
+ }
+ 
+-void phydm_show_rx_rate(void *dm_void, char input[][16], u32 *_used,
++static void phydm_show_rx_rate(void *dm_void, char input[][16], u32 *_used,
+ 			char *output, u32 *_out_len)
+ {
+ #if (RTL8822B_SUPPORT || RTL8821C_SUPPORT || RTL8814B_SUPPORT ||\
+@@ -3899,7 +3899,7 @@ void phydm_show_rx_rate(void *dm_void, char input[][16], u32 *_used,
+ #endif
+ }
+ 
+-void phydm_per_tone_evm(void *dm_void, char input[][16], u32 *_used,
++static void phydm_per_tone_evm(void *dm_void, char input[][16], u32 *_used,
+ 			char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4112,7 +4112,7 @@ void phydm_per_tone_evm(void *dm_void, char input[][16], u32 *_used,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_bw_ch_adjust(void *dm_void, char input[][16],
++static void phydm_bw_ch_adjust(void *dm_void, char input[][16],
+ 			u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4164,7 +4164,7 @@ out:
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_ext_rf_element_ctrl(void *dm_void, char input[][16], u32 *_used,
++static void phydm_ext_rf_element_ctrl(void *dm_void, char input[][16], u32 *_used,
+ 			       char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4186,7 +4186,7 @@ void phydm_ext_rf_element_ctrl(void *dm_void, char input[][16], u32 *_used,
+ 	}
+ }
+ 
+-void phydm_print_dbgport(void *dm_void, char input[][16], u32 *_used,
++static void phydm_print_dbgport(void *dm_void, char input[][16], u32 *_used,
+ 			 char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4234,7 +4234,7 @@ out:
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_get_anapar_table(void *dm_void, u32 *_used, char *output,
++static void phydm_get_anapar_table(void *dm_void, u32 *_used, char *output,
+ 			    u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4257,7 +4257,7 @@ void phydm_get_anapar_table(void *dm_void, u32 *_used, char *output,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_dd_dbg_dump(void *dm_void, char input[][16], u32 *_used,
++static void phydm_dd_dbg_dump(void *dm_void, char input[][16], u32 *_used,
+ 		       char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4291,7 +4291,7 @@ void phydm_dd_dbg_dump(void *dm_void, char input[][16], u32 *_used,
+ 	}
+ }
+ 
+-void phydm_nss_hitogram_mp(void *dm_void, enum PDM_RATE_TYPE rate_type,
++static void phydm_nss_hitogram_mp(void *dm_void, enum PDM_RATE_TYPE rate_type,
+ 			   u32 *_used, char *output, u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -4355,7 +4355,7 @@ void phydm_nss_hitogram_mp(void *dm_void, enum PDM_RATE_TYPE rate_type,
+ 	*_out_len = out_len;
+ }
+ 
+-void phydm_mp_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
++static void phydm_mp_dbg(void *dm_void, char input[][16], u32 *_used, char *output,
+ 		  u32 *_out_len)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_dig.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_dig.c
+index 367c939..c29887f 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_dig.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_dig.c
+@@ -31,7 +31,7 @@
+ #include "phydm_precomp.h"
+ 
+ #ifdef CFG_DIG_DAMPING_CHK
+-void phydm_dig_recorder_reset(void *dm_void)
++static void phydm_dig_recorder_reset(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -43,7 +43,7 @@ void phydm_dig_recorder_reset(void *dm_void)
+ 		       sizeof(struct phydm_dig_recorder_strcut));
+ }
+ 
+-void phydm_dig_recorder(void *dm_void, boolean first_connect, u8 igi_curr,
++static void phydm_dig_recorder(void *dm_void, boolean first_connect, u8 igi_curr,
+ 			u32 fa_cnt)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -95,7 +95,7 @@ void phydm_dig_recorder(void *dm_void, boolean first_connect, u8 igi_curr,
+ 		  dig_rc->igi_bitmap);
+ }
+ 
+-void phydm_dig_damping_chk(void *dm_void)
++static void phydm_dig_damping_chk(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -195,7 +195,7 @@ void phydm_dig_damping_chk(void *dm_void)
+ }
+ #endif
+ 
+-boolean
++static boolean
+ phydm_dig_go_up_check(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -271,7 +271,7 @@ phydm_dig_go_up_check(void *dm_void)
+ 	return ret;
+ }
+ 
+-void phydm_fa_threshold_check(void *dm_void, boolean is_dfs_band)
++static void phydm_fa_threshold_check(void *dm_void, boolean is_dfs_band)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -310,7 +310,7 @@ void phydm_fa_threshold_check(void *dm_void, boolean is_dfs_band)
+ 		  dig_t->fa_th[1], dig_t->fa_th[2]);
+ }
+ 
+-void phydm_set_big_jump_step(void *dm_void, u8 curr_igi)
++static void phydm_set_big_jump_step(void *dm_void, u8 curr_igi)
+ {
+ #if (RTL8822B_SUPPORT || RTL8197F_SUPPORT || RTL8192F_SUPPORT)
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -500,7 +500,7 @@ void phydm_fa_cnt_statistics_jgr3(void *dm_void)
+ 
+ #endif
+ 
+-void phydm_write_dig_reg_c50(void *dm_void, u8 igi)
++static void phydm_write_dig_reg_c50(void *dm_void, u8 igi)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -600,7 +600,7 @@ void odm_write_dig(void *dm_void, u8 new_igi)
+ 	PHYDM_DBG(dm, DBG_DIG, "New_igi=((0x%x))\n\n", new_igi);
+ }
+ 
+-u8 phydm_get_igi_reg_val(void *dm_void, enum bb_path path)
++static u8 phydm_get_igi_reg_val(void *dm_void, enum bb_path path)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u32 val = 0;
+@@ -691,7 +691,7 @@ void odm_pause_dig(void *dm_void, enum phydm_pause_type type,
+ 	PHYDM_DBG(dm, DBG_DIG, "pause_result=%d\n", rpt);
+ }
+ 
+-boolean
++static boolean
+ phydm_dig_abort(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -788,7 +788,7 @@ void phydm_dig_init(void *dm_void)
+ 	dig_t->dig_dl_en = 1;
+ #endif
+ }
+-void phydm_dig_abs_boundary_decision(struct dm_struct *dm, boolean is_dfs_band)
++static void phydm_dig_abs_boundary_decision(struct dm_struct *dm, boolean is_dfs_band)
+ {
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+ 	struct phydm_adaptivity_struct *adapt = &dm->adaptivity;
+@@ -840,7 +840,7 @@ void phydm_dig_abs_boundary_decision(struct dm_struct *dm, boolean is_dfs_band)
+ 		  dig_t->dm_dig_max, dig_t->dm_dig_min, dig_t->dig_max_of_min);
+ }
+ 
+-void phydm_dig_dym_boundary_decision(struct dm_struct *dm)
++static void phydm_dig_dym_boundary_decision(struct dm_struct *dm)
+ {
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+ #ifdef CFG_DIG_DAMPING_CHK
+@@ -919,7 +919,7 @@ void phydm_dig_dym_boundary_decision(struct dm_struct *dm)
+ 		  dig_t->rx_gain_range_max, dig_t->rx_gain_range_min);
+ }
+ 
+-void phydm_dig_abnormal_case(struct dm_struct *dm)
++static void phydm_dig_abnormal_case(struct dm_struct *dm)
+ {
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+ 
+@@ -931,7 +931,7 @@ void phydm_dig_abnormal_case(struct dm_struct *dm)
+ 		  dig_t->rx_gain_range_max, dig_t->rx_gain_range_min);
+ }
+ 
+-u8 phydm_new_igi_by_fa(struct dm_struct *dm, u8 igi, u32 fa_cnt, u8 *step_size)
++static u8 phydm_new_igi_by_fa(struct dm_struct *dm, u8 igi, u32 fa_cnt, u8 *step_size)
+ {
+ 	boolean dig_go_up_check = true;
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -950,7 +950,7 @@ u8 phydm_new_igi_by_fa(struct dm_struct *dm, u8 igi, u32 fa_cnt, u8 *step_size)
+ 	return igi;
+ }
+ 
+-u8 phydm_get_new_igi(struct dm_struct *dm, u8 igi, u32 fa_cnt,
++static u8 phydm_get_new_igi(struct dm_struct *dm, u8 igi, u32 fa_cnt,
+ 		     boolean is_dfs_band)
+ {
+ 	struct phydm_dig_struct *dig_t = &dm->dm_dig_table;
+@@ -1046,7 +1046,7 @@ u8 phydm_get_new_igi(struct dm_struct *dm, u8 igi, u32 fa_cnt,
+ 	return igi;
+ }
+ 
+-boolean phydm_dig_dfs_mode_en(void *dm_void)
++static boolean phydm_dig_dfs_mode_en(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	boolean dfs_mode_en = false;
+@@ -1204,7 +1204,7 @@ void phydm_dig_by_rssi_lps(void *dm_void)
+  * 3 FASLE ALARM CHECK
+  * 3============================================================
+  */
+-void phydm_false_alarm_counter_reg_reset(void *dm_void)
++static void phydm_false_alarm_counter_reg_reset(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_fa_struct *falm_cnt = &dm->false_alm_cnt;
+@@ -1300,7 +1300,7 @@ void phydm_false_alarm_counter_reg_reset(void *dm_void)
+ #endif /* @#if (ODM_IC_11AC_SERIES_SUPPORT) */
+ }
+ 
+-void phydm_false_alarm_counter_reg_hold(void *dm_void)
++static void phydm_false_alarm_counter_reg_hold(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 
+@@ -1322,7 +1322,7 @@ void phydm_false_alarm_counter_reg_hold(void *dm_void)
+ }
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-void phydm_fa_cnt_statistics_n(void *dm_void)
++static void phydm_fa_cnt_statistics_n(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_fa_struct *fa_t = &dm->false_alm_cnt;
+@@ -1511,7 +1511,7 @@ void phydm_fa_cnt_statistics_ac(void *dm_void)
+ }
+ #endif
+ 
+-void phydm_get_dbg_port_info(void *dm_void)
++static void phydm_get_dbg_port_info(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct phydm_fa_struct *fa_t = &dm->false_alm_cnt;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_interface.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_interface.c
+index fb8caea..911961b 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_interface.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_interface.c
+@@ -749,7 +749,7 @@ void odm_release_timer(struct dm_struct *dm, struct phydm_timer_list *timer)
+ #endif
+ }
+ 
+-u8 phydm_trans_h2c_id(struct dm_struct *dm, u8 phydm_h2c_id)
++static u8 phydm_trans_h2c_id(struct dm_struct *dm, u8 phydm_h2c_id)
+ {
+ 	u8 platform_h2c_id = phydm_h2c_id;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_noisemonitor.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_noisemonitor.c
+index aeeb255..175941b 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_noisemonitor.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_noisemonitor.c
+@@ -39,7 +39,7 @@
+  *
+  *************************************************/
+ 
+-void phydm_set_noise_data_sum(struct noise_level *noise_data, u8 max_rf_path)
++static void phydm_set_noise_data_sum(struct noise_level *noise_data, u8 max_rf_path)
+ {
+ 	u8 i = 0;
+ 
+@@ -52,7 +52,7 @@ void phydm_set_noise_data_sum(struct noise_level *noise_data, u8 max_rf_path)
+ }
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-s16 odm_inband_noise_monitor_n(struct dm_struct *dm, u8 is_pause_dig, u8 igi,
++static s16 odm_inband_noise_monitor_n(struct dm_struct *dm, u8 is_pause_dig, u8 igi,
+ 			       u32 max_time)
+ {
+ 	u32 tmp4b;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_phystatus.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_phystatus.c
+index e4465ac..d309d50 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_phystatus.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_phystatus.c
+@@ -68,7 +68,7 @@ u8 phydm_get_gid(struct dm_struct *dm, u8 *phy_status_inf)
+ }
+ #endif
+ 
+-void phydm_rx_statistic_cal(struct dm_struct *dm,
++static void phydm_rx_statistic_cal(struct dm_struct *dm,
+ 			    struct phydm_phyinfo_struct *phy_info,
+ 			    u8 *phy_status_inf,
+ 			    struct phydm_perpkt_info_struct *pktinfo)
+@@ -197,7 +197,7 @@ void phydm_reset_phystatus_statistic(struct dm_struct *dm)
+ 		       sizeof(struct phydm_phystatus_statistic));
+ }
+ 
+-void phydm_avg_phystatus_index(void *dm_void,
++static void phydm_avg_phystatus_index(void *dm_void,
+ 			       struct phydm_phyinfo_struct *phy_info,
+ 			       struct phydm_perpkt_info_struct *pktinfo)
+ {
+@@ -346,7 +346,7 @@ void phydm_avg_phystatus_index(void *dm_void,
+ 	}
+ }
+ 
+-void phydm_avg_phystatus_init(void *dm_void)
++static void phydm_avg_phystatus_init(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct odm_phy_dbg_info *dbg_i = &dm->phy_dbg_info;
+@@ -360,7 +360,7 @@ void phydm_avg_phystatus_init(void *dm_void)
+ 	odm_move_memory(dm, dbg_i->evm_hist_th, evm_hist_th, size);
+ }
+ 
+-u8 phydm_get_signal_quality(struct phydm_phyinfo_struct *phy_info,
++static u8 phydm_get_signal_quality(struct phydm_phyinfo_struct *phy_info,
+ 			    struct dm_struct *dm,
+ 			    struct phy_status_rpt_8192cd *phy_sts)
+ {
+@@ -383,7 +383,7 @@ u8 phydm_get_signal_quality(struct phydm_phyinfo_struct *phy_info,
+ 	return result;
+ }
+ 
+-u8 phydm_pwr_2_percent(s8 ant_power)
++static u8 phydm_pwr_2_percent(s8 ant_power)
+ {
+ 	if ((ant_power <= -100) || ant_power >= 20)
+ 		return 0;
+@@ -739,7 +739,7 @@ phydm_evm_2_percent(s8 value)
+ 	return (u8)ret_val;
+ }
+ 
+-s8 phydm_cck_rssi_convert(struct dm_struct *dm, u16 lna_idx, u8 vga_idx)
++static s8 phydm_cck_rssi_convert(struct dm_struct *dm, u16 lna_idx, u8 vga_idx)
+ {
+ 	/*@phydm_get_cck_rssi_table_from_reg*/
+ 	return (dm->cck_lna_gain_table[lna_idx] - (vga_idx << 1));
+@@ -780,7 +780,7 @@ void phydm_get_cck_rssi_table_from_reg(struct dm_struct *dm)
+ 		  dm->cck_lna_gain_table[6], dm->cck_lna_gain_table[7]);
+ }
+ 
+-s8 phydm_get_cck_rssi(void *dm_void, u8 lna_idx, u8 vga_idx)
++static s8 phydm_get_cck_rssi(void *dm_void, u8 lna_idx, u8 vga_idx)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	s8 rx_pow = 0;
+@@ -891,7 +891,7 @@ s8 phydm_get_cck_rssi(void *dm_void, u8 lna_idx, u8 vga_idx)
+ }
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT)
+-void phydm_phy_sts_n_parsing(struct dm_struct *dm,
++static void phydm_phy_sts_n_parsing(struct dm_struct *dm,
+ 			     struct phydm_phyinfo_struct *phy_info,
+ 			     u8 *phy_status_inf,
+ 			     struct phydm_perpkt_info_struct *pktinfo)
+@@ -1325,7 +1325,7 @@ void phydm_reset_rssi_for_dm(struct dm_struct *dm, u8 station_id)
+ 
+ #if (ODM_IC_11N_SERIES_SUPPORT || ODM_IC_11AC_SERIES_SUPPORT)
+ 
+-s32 phydm_get_rssi_8814_ofdm(struct dm_struct *dm, u8 *rssi_in)
++static s32 phydm_get_rssi_8814_ofdm(struct dm_struct *dm, u8 *rssi_in)
+ {
+ 	s32 rssi_avg;
+ 	u8 rx_count = 0;
+@@ -1371,7 +1371,7 @@ s32 phydm_get_rssi_8814_ofdm(struct dm_struct *dm, u8 *rssi_in)
+ 	return rssi_avg;
+ }
+ 
+-void phydm_process_rssi_for_dm(struct dm_struct *dm,
++static void phydm_process_rssi_for_dm(struct dm_struct *dm,
+ 			       struct phydm_phyinfo_struct *phy_info,
+ 			       struct phydm_perpkt_info_struct *pktinfo)
+ {
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rainfo.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rainfo.c
+index 818e3f0..629719e 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rainfo.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rainfo.c
+@@ -51,7 +51,7 @@ boolean phydm_is_cck_rate(void *dm_void, u8 rate)
+ 	return ((rate & 0x7f) <= ODM_RATE11M) ? true : false;
+ }
+ 
+-u8 phydm_rate_2_rate_digit(void *dm_void, u8 rate)
++static u8 phydm_rate_2_rate_digit(void *dm_void, u8 rate)
+ {
+ 	u8 legacy_table[12] = {1, 2, 5, 11, 6, 9, 12, 18, 24, 36, 48, 54};
+ 	u8 rate_idx = rate & 0x7f; /*remove bit7 SGI*/
+@@ -668,7 +668,7 @@ void phydm_update_hal_ra_mask(
+ 
+ #endif
+ 
+-void phydm_rate_adaptive_mask_init(void *dm_void)
++static void phydm_rate_adaptive_mask_init(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ra_table *ra_t = &dm->dm_ra_table;
+@@ -838,7 +838,7 @@ u8 phydm_get_rx_stream_num(void *dm_void, enum rf_type type)
+ 	return rx_num;
+ }
+ 
+-u8 phydm_get_tx_stream_num(void *dm_void, enum rf_type type)
++static u8 phydm_get_tx_stream_num(void *dm_void, enum rf_type type)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	u8 tx_num = 1;
+@@ -857,7 +857,7 @@ u8 phydm_get_tx_stream_num(void *dm_void, enum rf_type type)
+ 	return tx_num;
+ }
+ 
+-u64 phydm_get_bb_mod_ra_mask(void *dm_void, u8 sta_idx)
++static u64 phydm_get_bb_mod_ra_mask(void *dm_void, u8 sta_idx)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct cmn_sta_info *sta = dm->phydm_sta_info[sta_idx];
+@@ -1031,7 +1031,7 @@ u8 phydm_get_rate_from_rssi_lv(void *dm_void, u8 sta_idx)
+ 	return rate_idx;
+ }
+ 
+-u8 phydm_get_rate_id(void *dm_void, u8 sta_idx)
++static u8 phydm_get_rate_id(void *dm_void, u8 sta_idx)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct cmn_sta_info *sta = dm->phydm_sta_info[sta_idx];
+@@ -1135,7 +1135,7 @@ u8 phydm_get_rate_id(void *dm_void, u8 sta_idx)
+ 	return rate_id_idx;
+ }
+ 
+-void phydm_ra_h2c(void *dm_void, u8 sta_idx, u8 dis_ra, u8 dis_pt,
++static void phydm_ra_h2c(void *dm_void, u8 sta_idx, u8 dis_ra, u8 dis_pt,
+ 		  u8 no_update_bw, u8 init_ra_lv, u64 ra_mask)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+@@ -1409,7 +1409,7 @@ u8 phydm_vht_en_mapping(void *dm_void, u32 wireless_mode)
+ 	return vht_en_out;
+ }
+ 
+-u8 phydm_rftype2rateid_2g_n20(void *dm_void, u8 rf_type)
++static u8 phydm_rftype2rateid_2g_n20(void *dm_void, u8 rf_type)
+ {
+ 	u8 rate_id_idx = 0;
+ 
+@@ -1424,7 +1424,7 @@ u8 phydm_rftype2rateid_2g_n20(void *dm_void, u8 rf_type)
+ 	return rate_id_idx;
+ }
+ 
+-u8 phydm_rftype2rateid_2g_n40(void *dm_void, u8 rf_type)
++static u8 phydm_rftype2rateid_2g_n40(void *dm_void, u8 rf_type)
+ {
+ 	u8 rate_id_idx = 0;
+ 
+@@ -1439,7 +1439,7 @@ u8 phydm_rftype2rateid_2g_n40(void *dm_void, u8 rf_type)
+ 	return rate_id_idx;
+ }
+ 
+-u8 phydm_rftype2rateid_5g_n(void *dm_void, u8 rf_type)
++static u8 phydm_rftype2rateid_5g_n(void *dm_void, u8 rf_type)
+ {
+ 	u8 rate_id_idx = 0;
+ 
+@@ -1454,7 +1454,7 @@ u8 phydm_rftype2rateid_5g_n(void *dm_void, u8 rf_type)
+ 	return rate_id_idx;
+ }
+ 
+-u8 phydm_rftype2rateid_ac80(void *dm_void, u8 rf_type)
++static u8 phydm_rftype2rateid_ac80(void *dm_void, u8 rf_type)
+ {
+ 	u8 rate_id_idx = 0;
+ 
+@@ -1469,7 +1469,7 @@ u8 phydm_rftype2rateid_ac80(void *dm_void, u8 rf_type)
+ 	return rate_id_idx;
+ }
+ 
+-u8 phydm_rftype2rateid_ac40(void *dm_void, u8 rf_type)
++static u8 phydm_rftype2rateid_ac40(void *dm_void, u8 rf_type)
+ {
+ 	u8 rate_id_idx = 0;
+ 
+@@ -1572,7 +1572,7 @@ u8 phydm_rssi_lv_dec(void *dm_void, u32 rssi, u8 ratr_state)
+ 	return new_rssi_lv;
+ }
+ 
+-enum phydm_qam_order phydm_get_ofdm_qam_order(void *dm_void, u8 rate_idx)
++static enum phydm_qam_order phydm_get_ofdm_qam_order(void *dm_void, u8 rate_idx)
+ {
+ 	u8 tmp_idx = 0;
+ 	enum phydm_qam_order qam_order = PHYDM_QAM_BPSK;
+@@ -1653,7 +1653,7 @@ u8 phydm_rate_order_compute(void *dm_void, u8 rate_idx)
+ }
+ 
+ #if (DM_ODM_SUPPORT_TYPE == ODM_CE)
+-u8 phydm_rate2ss(void *dm_void, u8 rate_idx)
++static u8 phydm_rate2ss(void *dm_void, u8 rate_idx)
+ {
+ 	u8 ret = 0xff;
+ 	u8 i, j;
+@@ -1678,7 +1678,7 @@ u8 phydm_rate2ss(void *dm_void, u8 rate_idx)
+ 	return ret;
+ }
+ 
+-u8 phydm_rate2plcp(void *dm_void, u8 rate_idx)
++static u8 phydm_rate2plcp(void *dm_void, u8 rate_idx)
+ {
+ 	u8 rate2ss = 0;
+ 	u8 ltftime = 0;
+@@ -1722,7 +1722,7 @@ u8 phydm_get_plcp(void *dm_void, u16 macid)
+ }
+ #endif
+ 
+-void phydm_ra_common_info_update(void *dm_void)
++static void phydm_ra_common_info_update(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ra_table *ra_tab = &dm->dm_ra_table;
+@@ -1770,7 +1770,7 @@ void phydm_rrsr_set_register(void *dm_void, u32 rrsr_val)
+ 	odm_set_mac_reg(dm, R_0x440, 0xfffff, rrsr_val);
+ }
+ 
+-void phydm_masked_rrsr_set_register(void *dm_void, u32 rrsr_val)
++static void phydm_masked_rrsr_set_register(void *dm_void, u32 rrsr_val)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ra_table *ra_tab = &dm->dm_ra_table;
+@@ -1782,7 +1782,7 @@ void phydm_masked_rrsr_set_register(void *dm_void, u32 rrsr_val)
+ 	odm_set_mac_reg(dm, R_0x440, 0xfffff, rrsr_val);
+ }
+ 
+-void phydm_rrsr_mask(void *dm_void)
++static void phydm_rrsr_mask(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ra_table *ra = &dm->dm_ra_table;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rssi_monitor.c b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rssi_monitor.c
+index 0d5e417..6f16f17 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rssi_monitor.c
++++ b/drivers/net/wireless/rtl8189fs/hal/phydm/phydm_rssi_monitor.c
+@@ -32,7 +32,7 @@
+ 
+ #ifdef PHYDM_SUPPORT_RSSI_MONITOR
+ 
+-void phydm_rssi_monitor_h2c(void *dm_void, u8 macid)
++static void phydm_rssi_monitor_h2c(void *dm_void, u8 macid)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct ra_table *ra_t = &dm->dm_ra_table;
+@@ -95,7 +95,7 @@ void phydm_rssi_monitor_h2c(void *dm_void, u8 macid)
+ 	}
+ }
+ 
+-void phydm_calculate_rssi_min_max(void *dm_void)
++static void phydm_calculate_rssi_min_max(void *dm_void)
+ {
+ 	struct dm_struct *dm = (struct dm_struct *)dm_void;
+ 	struct cmn_sta_info *sta;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_hal_init.c b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_hal_init.c
+index 15ed0a6..69e04e6 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_hal_init.c
++++ b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_hal_init.c
+@@ -399,7 +399,7 @@ void rtl8188f_FirmwareSelfReset(PADAPTER padapter)
+ #endif /* CONFIG_FILE_FWIMG */
+ 
+ #ifdef CONFIG_MP_INCLUDED
+-int _WriteBTFWtoTxPktBuf8188F(
++static int _WriteBTFWtoTxPktBuf8188F(
+ 			PADAPTER	Adapter,
+ 			void			*buffer,
+ 			u32			FwBufLen,
+@@ -614,7 +614,7 @@ exit:
+ /* Description: Determine the contents of H2C BT_FW_PATCH Command sent to FW. */
+ /* 2011.10.20 by tynli */
+ /* */
+-void
++static void
+ SetFwBTFwPatchCmd(
+ 	PADAPTER	Adapter,
+ 	u16		FwSize
+@@ -637,7 +637,7 @@ SetFwBTFwPatchCmd(
+ 
+ }
+ 
+-void
++static void
+ SetFwBTPwrCmd(
+ 	PADAPTER	Adapter,
+ 	u8	PwrIdx
+@@ -656,7 +656,7 @@ SetFwBTPwrCmd(
+ /* */
+ /* 2011.10.20. by tynli. */
+ /* */
+-int
++static int
+ _CheckWLANFwPatchBTFwReady(
+ 	PADAPTER Adapter,
+ 	BOOLEAN bRecover
+@@ -717,7 +717,7 @@ _CheckWLANFwPatchBTFwReady(
+ 	return ret;
+ }
+ 
+-int ReservedPage_Compare(PADAPTER Adapter, PRT_MP_FIRMWARE pFirmware, u32 BTPatchSize)
++static int ReservedPage_Compare(PADAPTER Adapter, PRT_MP_FIRMWARE pFirmware, u32 BTPatchSize)
+ {
+ 	u8 temp, ret, lastBTsz;
+ 	u32 u1bTmp = 0, address_start = 0, count = 0, i = 0;
+@@ -899,7 +899,7 @@ s32 FirmwareDownloadBT(PADAPTER padapter, PRT_MP_FIRMWARE pFirmware)
+ #endif /* CONFIG_MP_INCLUDED */
+ 
+ #if defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
+-void rtl8188f_cal_txdesc_chksum(struct tx_desc *ptxdesc)
++static void rtl8188f_cal_txdesc_chksum(struct tx_desc *ptxdesc)
+ {
+ 	u16	*usPtr = (u16 *)ptxdesc;
+ 	u32 count;
+@@ -2550,7 +2550,7 @@ hal_EfusePartialWriteCheck(
+ 	return bRet;
+ }
+ 
+-BOOLEAN
++static BOOLEAN
+ hal_EfuseFixHeaderProcess(
+ 			PADAPTER			pAdapter,
+ 			u8					efuseType,
+@@ -3041,7 +3041,7 @@ static void rtl8188f_SetBeaconRelatedRegisters(PADAPTER padapter)
+ 	rtw_write8(padapter, bcn_ctrl_reg, val8);
+ }
+ 
+-void hal_notch_filter_8188f(_adapter *adapter, bool enable)
++static void hal_notch_filter_8188f(_adapter *adapter, bool enable)
+ {
+ 	if (enable) {
+ 		RTW_INFO("Enable notch filter\n");
+@@ -3052,7 +3052,7 @@ void hal_notch_filter_8188f(_adapter *adapter, bool enable)
+ 	}
+ }
+ 
+-u8 rtl8188f_MRateIdxToARFRId(PADAPTER padapter, u8 rate_idx)
++static u8 rtl8188f_MRateIdxToARFRId(PADAPTER padapter, u8 rate_idx)
+ {
+ 	u8 ret = 0;
+ 	enum rf_type rftype = (enum rf_type)GET_RF_TYPE(padapter);
+@@ -3412,7 +3412,7 @@ s32 rtl8188f_InitLLTTable(PADAPTER padapter)
+ }
+ 
+ #if defined(CONFIG_USB_HCI) || defined(CONFIG_SDIO_HCI) || defined(CONFIG_GSPI_HCI)
+-void _DisableGPIO(PADAPTER	padapter)
++static void _DisableGPIO(PADAPTER	padapter)
+ {
+ 	/*
+ 	 * j. GPIO_PIN_CTRL 0x44[31:0]=0x000
+@@ -3448,7 +3448,7 @@ void _DisableGPIO(PADAPTER	padapter)
+ 
+ } /*end of _DisableGPIO() */
+ 
+-void _DisableRFAFEAndResetBB8188F(PADAPTER padapter)
++static void _DisableRFAFEAndResetBB8188F(PADAPTER padapter)
+ {
+ 	/*
+ 	 * a.	TXPAUSE 0x522[7:0] = 0xFF			Pause MAC TX queue
+@@ -3479,12 +3479,12 @@ void _DisableRFAFEAndResetBB8188F(PADAPTER padapter)
+ 
+ }
+ 
+-void _DisableRFAFEAndResetBB(PADAPTER padapter)
++static void _DisableRFAFEAndResetBB(PADAPTER padapter)
+ {
+ 	_DisableRFAFEAndResetBB8188F(padapter);
+ }
+ 
+-void _ResetDigitalProcedure1_8188F(PADAPTER padapter, BOOLEAN bWithoutHWSM)
++static void _ResetDigitalProcedure1_8188F(PADAPTER padapter, BOOLEAN bWithoutHWSM)
+ {
+ 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+ 
+@@ -3591,12 +3591,12 @@ void _ResetDigitalProcedure1_8188F(PADAPTER padapter, BOOLEAN bWithoutHWSM)
+ 
+ }
+ 
+-void _ResetDigitalProcedure1(PADAPTER padapter, BOOLEAN bWithoutHWSM)
++static void _ResetDigitalProcedure1(PADAPTER padapter, BOOLEAN bWithoutHWSM)
+ {
+ 	_ResetDigitalProcedure1_8188F(padapter, bWithoutHWSM);
+ }
+ 
+-void _ResetDigitalProcedure2(PADAPTER padapter)
++static void _ResetDigitalProcedure2(PADAPTER padapter)
+ {
+ 	/*HAL_DATA_TYPE		*pHalData	= GET_HAL_DATA(padapter); */
+ 	/*
+@@ -3610,7 +3610,7 @@ void _ResetDigitalProcedure2(PADAPTER padapter)
+ 	rtw_write8(padapter, REG_SYS_ISO_CTRL + 1, 0x82); /*modify to 0x82 by Scott. */
+ }
+ 
+-void _DisableAnalog(PADAPTER padapter, BOOLEAN bWithoutHWSM)
++static void _DisableAnalog(PADAPTER padapter, BOOLEAN bWithoutHWSM)
+ {
+ 	HAL_DATA_TYPE	*pHalData	= GET_HAL_DATA(padapter);
+ 	u16 value16 = 0;
+@@ -5132,7 +5132,7 @@ struct bcn_qinfo_8188f {
+ 	u16 pkt_num:8;
+ };
+ 
+-void dump_qinfo_8188f(void *sel, struct qinfo_8188f *info, const char *tag)
++static void dump_qinfo_8188f(void *sel, struct qinfo_8188f *info, const char *tag)
+ {
+ 	/*if (info->pkt_num) */
+ 	RTW_PRINT_SEL(sel, "%shead:0x%02x, tail:0x%02x, pkt_num:%u, macid:%u, ac:%u\n"
+@@ -5140,7 +5140,7 @@ void dump_qinfo_8188f(void *sel, struct qinfo_8188f *info, const char *tag)
+ 		     );
+ }
+ 
+-void dump_bcn_qinfo_8188f(void *sel, struct bcn_qinfo_8188f *info, const char *tag)
++static void dump_bcn_qinfo_8188f(void *sel, struct bcn_qinfo_8188f *info, const char *tag)
+ {
+ 	/*if (info->pkt_num) */
+ 	RTW_PRINT_SEL(sel, "%shead:0x%02x, pkt_num:%u\n"
+@@ -5148,7 +5148,7 @@ void dump_bcn_qinfo_8188f(void *sel, struct bcn_qinfo_8188f *info, const char *t
+ 		     );
+ }
+ 
+-void dump_mac_qinfo_8188f(void *sel, _adapter *adapter)
++static void dump_mac_qinfo_8188f(void *sel, _adapter *adapter)
+ {
+ 	u32 q0_info;
+ 	u32 q1_info;
+@@ -5209,7 +5209,7 @@ static void dump_mac_txfifo_8188f(void *sel, _adapter *adapter)
+ 			 , hpq, lpq, npq, epq, pubq);
+ }
+ 
+-void rtl8188f_read_wmmedca_reg(PADAPTER adapter, u16 *vo_params, u16 *vi_params, u16 *be_params, u16 *bk_params)
++static void rtl8188f_read_wmmedca_reg(PADAPTER adapter, u16 *vo_params, u16 *vi_params, u16 *be_params, u16 *bk_params)
+ {
+ 	u8 vo_reg_params[4];
+ 	u8 vi_reg_params[4];
+@@ -5387,7 +5387,7 @@ u8 SetHalDefVar8188F(PADAPTER padapter, HAL_DEF_VARIABLE variable, void *pval)
+ 	return bResult;
+ }
+ 
+-void hal_ra_info_dump(_adapter *padapter , void *sel)
++static void hal_ra_info_dump(_adapter *padapter , void *sel)
+ {
+ 	int i;
+ 	u8 mac_id;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_phycfg.c b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_phycfg.c
+index f535811..5190b63 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_phycfg.c
++++ b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/rtl8188f_phycfg.c
+@@ -813,7 +813,7 @@ PHY_SetTxPowerLevel8188F(
+ }
+ 
+ /* A workaround to eliminate the 2400MHz, 2440MHz, 2480MHz spur of 8188F. (Asked by David.) */
+-void
++static void
+ phy_SpurCalibration_8188F(
+ 		PADAPTER					pAdapter,
+ 		u8						ToChannel,
+@@ -983,7 +983,7 @@ phy_SpurCalibration_8188F(
+ 
+ }
+ 
+-void
++static void
+ phy_SetRegBW_8188F(
+ 		PADAPTER		Adapter,
+ 	enum channel_width	CurrentBW
+@@ -1013,7 +1013,7 @@ phy_SetRegBW_8188F(
+ 	}
+ }
+ 
+-u8
++static u8
+ phy_GetSecondaryChnl_8188F(
+ 		PADAPTER	Adapter
+ )
+@@ -1049,7 +1049,7 @@ phy_GetSecondaryChnl_8188F(
+ 	return (SCSettingOf40 << 4) | SCSettingOf20;
+ }
+ 
+-void
++static void
+ phy_PostSetBwMode8188F(
+ 		PADAPTER	Adapter
+ )
+@@ -1128,7 +1128,7 @@ phy_PostSetBwMode8188F(
+ 	PHY_RF6052SetBandwidth8188F(Adapter, pHalData->current_channel_bw);
+ }
+ 
+-void
++static void
+ phy_SwChnl8188F(
+ 		PADAPTER					pAdapter
+ )
+@@ -1154,7 +1154,7 @@ phy_SwChnl8188F(
+ 	phy_SpurCalibration_8188F(pAdapter, channelToSW, 0x16);
+ }
+ 
+-void
++static void
+ phy_SwChnlAndSetBwMode8188F(
+ 	PADAPTER		Adapter
+ )
+@@ -1196,7 +1196,7 @@ phy_SwChnlAndSetBwMode8188F(
+ 	rtw_hal_set_tx_power_level(Adapter, pHalData->current_channel);
+ }
+ 
+-void
++static void
+ PHY_HandleSwChnlAndSetBW8188F(
+ 		PADAPTER			Adapter,
+ 		BOOLEAN				bSwitchChannel,
+diff --git a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/rtl8189fs_xmit.c b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/rtl8189fs_xmit.c
+index b4c678d..f53fb9a 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/rtl8189fs_xmit.c
++++ b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/rtl8189fs_xmit.c
+@@ -517,7 +517,7 @@ static s32 xmit_xmitframes(PADAPTER padapter, struct xmit_priv *pxmitpriv)
+  *	_SUCCESS	ok
+  *	_FAIL		something error
+  */
+-s32 rtl8188fs_xmit_handler(PADAPTER padapter)
++static s32 rtl8188fs_xmit_handler(PADAPTER padapter)
+ {
+ 	struct xmit_priv *pxmitpriv;
+ 	s32 ret;
+diff --git a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_halinit.c b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_halinit.c
+index 4f5e85c..5eb4150 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_halinit.c
++++ b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_halinit.c
+@@ -369,12 +369,12 @@ static void _InitTransferPageSize(PADAPTER padapter)
+ 	rtw_write8(padapter, REG_PBP, value8);
+ }
+ 
+-void _InitDriverInfoSize(PADAPTER padapter, u8 drvInfoSize)
++static void _InitDriverInfoSize(PADAPTER padapter, u8 drvInfoSize)
+ {
+ 	rtw_write8(padapter, REG_RX_DRVINFO_SZ, drvInfoSize);
+ }
+ 
+-void _InitNetworkType(PADAPTER padapter)
++static void _InitNetworkType(PADAPTER padapter)
+ {
+ 	u32 value32;
+ 
+@@ -387,7 +387,7 @@ void _InitNetworkType(PADAPTER padapter)
+ 	rtw_write32(padapter, REG_CR, value32);
+ }
+ 
+-void _InitWMACSetting(PADAPTER padapter)
++static void _InitWMACSetting(PADAPTER padapter)
+ {
+ 	PHAL_DATA_TYPE pHalData;
+ 	u16 value16;
+@@ -426,7 +426,7 @@ void _InitWMACSetting(PADAPTER padapter)
+ 	rtw_write16(padapter, REG_RXFLTMAP0, value16);
+ }
+ 
+-void _InitAdaptiveCtrl(PADAPTER padapter)
++static void _InitAdaptiveCtrl(PADAPTER padapter)
+ {
+ 	u16	value16;
+ 	u32	value32;
+@@ -454,7 +454,7 @@ void _InitAdaptiveCtrl(PADAPTER padapter)
+ 	rtw_write16(padapter, REG_RETRY_LIMIT, value16);
+ }
+ 
+-void _InitEDCA(PADAPTER padapter)
++static void _InitEDCA(PADAPTER padapter)
+ {
+ 	/* Set Spec SIFS (used in NAV) */
+ 	rtw_write16(padapter, REG_SPEC_SIFS, 0x100a);
+@@ -476,7 +476,7 @@ void _InitEDCA(PADAPTER padapter)
+ 	rtw_write8(padapter, REG_USTIME_TSF_8188F, 0x28);
+ }
+ 
+-void _InitRetryFunction(PADAPTER padapter)
++static void _InitRetryFunction(PADAPTER padapter)
+ {
+ 	u8	value8;
+ 
+@@ -505,7 +505,7 @@ static void HalRxAggr8188FSdio(PADAPTER padapter)
+ 	rtw_write16(padapter, REG_RXDMA_AGG_PG_TH, (dma_time_th << 8) | dma_len_th);
+ }
+ 
+-void sdio_AggSettingRxUpdate(PADAPTER padapter)
++static void sdio_AggSettingRxUpdate(PADAPTER padapter)
+ {
+ 	HAL_DATA_TYPE *pHalData;
+ 	u8 valueDMA;
+@@ -525,7 +525,7 @@ void sdio_AggSettingRxUpdate(PADAPTER padapter)
+ 	rtw_write8(padapter, REG_RXDMA_MODE_CTRL_8188F, valueRxAggCtrl);/* RxAggLowThresh = 4*1K */
+ }
+ 
+-void _initSdioAggregationSetting(PADAPTER padapter)
++static void _initSdioAggregationSetting(PADAPTER padapter)
+ {
+ 	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+ 
+@@ -564,7 +564,7 @@ static void _RXAggrSwitch(PADAPTER padapter, u8 enable)
+ }
+ #endif
+ 
+-void _InitInterrupt(PADAPTER padapter)
++static void _InitInterrupt(PADAPTER padapter)
+ {
+ 	/*  */
+ 	/* Initialize and enable SDIO Host Interrupt. */
+@@ -577,7 +577,7 @@ void _InitInterrupt(PADAPTER padapter)
+ 	InitSysInterrupt8188FSdio(padapter);
+ }
+ 
+-void _InitRDGSetting(PADAPTER padapter)
++static void _InitRDGSetting(PADAPTER padapter)
+ {
+ 	rtw_write8(padapter, REG_RD_CTRL, 0xFF);
+ 	rtw_write16(padapter, REG_RD_NAV_NXT, 0x200);
+@@ -1353,7 +1353,7 @@ exit:
+  * If variable not handled here,
+  * some variables will be processed in SetHwReg8188F()
+  */
+-u8 SetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
++static u8 SetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
+ {
+ 	PHAL_DATA_TYPE pHalData;
+ 	u8 ret = _SUCCESS;
+@@ -1409,7 +1409,7 @@ u8 SetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
+  * If variable not handled here,
+  * some variables will be processed in GetHwReg8188F()
+  */
+-void GetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
++static void GetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
+ {
+ 	PHAL_DATA_TYPE pHalData = GET_HAL_DATA(padapter);
+ 
+@@ -1435,7 +1435,7 @@ void GetHwReg8188FS(PADAPTER padapter, u8 variable, u8 *val)
+  *	Description:
+  *		Query setting of specified variable.
+  *   */
+-u8
++static u8
+ GetHalDefVar8188FSDIO(
+ 		PADAPTER				Adapter,
+ 		HAL_DEF_VARIABLE		eVariable,
+@@ -1469,7 +1469,7 @@ GetHalDefVar8188FSDIO(
+  *	Description:
+  *		Change default setting of specified variable.
+  *   */
+-u8
++static u8
+ SetHalDefVar8188FSDIO(
+ 		PADAPTER				Adapter,
+ 		HAL_DEF_VARIABLE		eVariable,
+diff --git a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_ops.c b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_ops.c
+index a1726eb..c6cda8e 100644
+--- a/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_ops.c
++++ b/drivers/net/wireless/rtl8189fs/hal/rtl8188f/sdio/sdio_ops.c
+@@ -160,7 +160,7 @@ static u32 _cvrt2ftaddr(const u32 addr, u8 *pdeviceId, u16 *poffset)
+ }
+ 
+ 
+-u8 sdio_read8(struct intf_hdl *pintfhdl, u32 addr)
++static u8 sdio_read8(struct intf_hdl *pintfhdl, u32 addr)
+ {
+ 	u32 ftaddr;
+ 	u8 device_id;
+@@ -181,7 +181,7 @@ u8 sdio_read8(struct intf_hdl *pintfhdl, u32 addr)
+ 	return val;
+ }
+ 
+-u16 sdio_read16(struct intf_hdl *pintfhdl, u32 addr)
++static u16 sdio_read16(struct intf_hdl *pintfhdl, u32 addr)
+ {
+ 	u32 ftaddr;
+ 	u8 device_id;
+@@ -204,7 +204,7 @@ u16 sdio_read16(struct intf_hdl *pintfhdl, u32 addr)
+ 	return val;
+ }
+ 
+-u32 sdio_read32(struct intf_hdl *pintfhdl, u32 addr)
++static u32 sdio_read32(struct intf_hdl *pintfhdl, u32 addr)
+ {
+ 	PADAPTER padapter;
+ 	u8 bMacPwrCtrlOn;
+@@ -280,7 +280,7 @@ u32 sdio_read32(struct intf_hdl *pintfhdl, u32 addr)
+ 	return val;
+ }
+ 
+-s32 sdio_readN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
++static s32 sdio_readN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
+ {
+ 	PADAPTER padapter;
+ 	u8 bMacPwrCtrlOn;
+@@ -341,7 +341,7 @@ s32 sdio_readN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
+ 	return err;
+ }
+ 
+-s32 sdio_write8(struct intf_hdl *pintfhdl, u32 addr, u8 val)
++static s32 sdio_write8(struct intf_hdl *pintfhdl, u32 addr, u8 val)
+ {
+ 	u32 ftaddr;
+ 	u8 device_id;
+@@ -363,7 +363,7 @@ s32 sdio_write8(struct intf_hdl *pintfhdl, u32 addr, u8 val)
+ 	return err;
+ }
+ 
+-s32 sdio_write16(struct intf_hdl *pintfhdl, u32 addr, u16 val)
++static s32 sdio_write16(struct intf_hdl *pintfhdl, u32 addr, u16 val)
+ {
+ 	u32 ftaddr;
+ 	u8 device_id;
+@@ -385,7 +385,7 @@ s32 sdio_write16(struct intf_hdl *pintfhdl, u32 addr, u16 val)
+ 	return err;
+ }
+ 
+-s32 sdio_write32(struct intf_hdl *pintfhdl, u32 addr, u32 val)
++static s32 sdio_write32(struct intf_hdl *pintfhdl, u32 addr, u32 val)
+ {
+ 	PADAPTER padapter;
+ 	u8 bMacPwrCtrlOn;
+@@ -462,7 +462,7 @@ s32 sdio_write32(struct intf_hdl *pintfhdl, u32 addr, u32 val)
+ 	return err;
+ }
+ 
+-s32 sdio_writeN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
++static s32 sdio_writeN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
+ {
+ 	PADAPTER padapter;
+ 	u8 bMacPwrCtrlOn;
+@@ -526,7 +526,7 @@ s32 sdio_writeN(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *pbuf)
+ 	return err;
+ }
+ 
+-u8 sdio_f0_read8(struct intf_hdl *pintfhdl, u32 addr)
++static u8 sdio_f0_read8(struct intf_hdl *pintfhdl, u32 addr)
+ {
+ 	u32 ftaddr;
+ 	u8 val;
+@@ -537,7 +537,7 @@ u8 sdio_f0_read8(struct intf_hdl *pintfhdl, u32 addr)
+ 	return val;
+ }
+ 
+-void sdio_read_mem(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *rmem)
++static void sdio_read_mem(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *rmem)
+ {
+ 	s32 err;
+ 
+@@ -546,7 +546,7 @@ void sdio_read_mem(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *rmem)
+ 
+ }
+ 
+-void sdio_write_mem(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *wmem)
++static void sdio_write_mem(struct intf_hdl *pintfhdl, u32 addr, u32 cnt, u8 *wmem)
+ {
+ 
+ 	sdio_writeN(pintfhdl, addr, cnt, wmem);
+@@ -870,7 +870,7 @@ u8 SdioLocalCmd52Read1Byte(PADAPTER padapter, u32 addr)
+ 	return val;
+ }
+ 
+-u16 SdioLocalCmd52Read2Byte(PADAPTER padapter, u32 addr)
++static u16 SdioLocalCmd52Read2Byte(PADAPTER padapter, u32 addr)
+ {
+ 	u16 val = 0;
+ 	struct intf_hdl *pintfhdl = &padapter->iopriv.intf;
+@@ -883,7 +883,7 @@ u16 SdioLocalCmd52Read2Byte(PADAPTER padapter, u32 addr)
+ 	return val;
+ }
+ 
+-u32 SdioLocalCmd52Read4Byte(PADAPTER padapter, u32 addr)
++static u32 SdioLocalCmd52Read4Byte(PADAPTER padapter, u32 addr)
+ {
+ 	u32 val = 0;
+ 	struct intf_hdl *pintfhdl = &padapter->iopriv.intf;
+@@ -896,7 +896,7 @@ u32 SdioLocalCmd52Read4Byte(PADAPTER padapter, u32 addr)
+ 	return val;
+ }
+ 
+-u32 SdioLocalCmd53Read4Byte(PADAPTER padapter, u32 addr)
++static u32 SdioLocalCmd53Read4Byte(PADAPTER padapter, u32 addr)
+ {
+ 
+ 	u8 bMacPwrCtrlOn;
+@@ -928,7 +928,7 @@ void SdioLocalCmd52Write1Byte(PADAPTER padapter, u32 addr, u8 v)
+ 	sd_cmd52_write(pintfhdl, addr, 1, &v);
+ }
+ 
+-void SdioLocalCmd52Write2Byte(PADAPTER padapter, u32 addr, u16 v)
++static void SdioLocalCmd52Write2Byte(PADAPTER padapter, u32 addr, u16 v)
+ {
+ 	struct intf_hdl *pintfhdl = &padapter->iopriv.intf;
+ 
+@@ -937,7 +937,7 @@ void SdioLocalCmd52Write2Byte(PADAPTER padapter, u32 addr, u16 v)
+ 	sd_cmd52_write(pintfhdl, addr, 2, (u8 *)&v);
+ }
+ 
+-void SdioLocalCmd52Write4Byte(PADAPTER padapter, u32 addr, u32 v)
++static void SdioLocalCmd52Write4Byte(PADAPTER padapter, u32 addr, u32 v)
+ {
+ 	struct intf_hdl *pintfhdl = &padapter->iopriv.intf;
+ 	HalSdioGetCmdAddr8188FSdio(padapter, SDIO_LOCAL_DEVICE_ID, addr, &addr);
+@@ -1113,7 +1113,7 @@ void ClearInterrupt8188FSdio(PADAPTER padapter)
+  *
+  *	Created by Roger, 2011.02.11.
+  *   */
+-void ClearSysInterrupt8188FSdio(PADAPTER padapter)
++static void ClearSysInterrupt8188FSdio(PADAPTER padapter)
+ {
+ 	PHAL_DATA_TYPE pHalData;
+ 	u32 clear;
+@@ -1229,7 +1229,7 @@ void DisableInterruptButCpwm28188FSdio(PADAPTER padapter)
+  *
+  *	Created by Roger, 2011.02.11.
+  *   */
+-void UpdateInterruptMask8188FSdio(PADAPTER padapter, u32 AddMSR, u32 RemoveMSR)
++static void UpdateInterruptMask8188FSdio(PADAPTER padapter, u32 AddMSR, u32 RemoveMSR)
+ {
+ 	HAL_DATA_TYPE *pHalData;
+ 
+@@ -1504,7 +1504,7 @@ static void restore_himr_8188f_sdio(_adapter *adapter)
+ }
+ #endif /* SD_INT_HDL_DIS_HIMR_RX_REQ */
+ 
+-void sd_recv(PADAPTER padapter)
++static void sd_recv(PADAPTER padapter)
+ {
+ 	PHAL_DATA_TYPE phal = GET_HAL_DATA(padapter);
+ 	struct recv_buf *precvbuf;
+diff --git a/drivers/net/wireless/rtl8189fs/include/osdep_service.h b/drivers/net/wireless/rtl8189fs/include/osdep_service.h
+index 36665c1..f7e34b4 100644
+--- a/drivers/net/wireless/rtl8189fs/include/osdep_service.h
++++ b/drivers/net/wireless/rtl8189fs/include/osdep_service.h
+@@ -798,4 +798,6 @@ int hexstr2bin(const char *hex, u8 *buf, size_t len);
+ #error "NOT DEFINE \"rtw_sprintf\"!!"
+ #endif /* !PLATFORM_LINUX */
+ 
++
++
+ #endif
+diff --git a/drivers/net/wireless/rtl8189fs/include/rtw_br_ext.h b/drivers/net/wireless/rtl8189fs/include/rtw_br_ext.h
+index 54ba75e..216a391 100644
+--- a/drivers/net/wireless/rtl8189fs/include/rtw_br_ext.h
++++ b/drivers/net/wireless/rtl8189fs/include/rtw_br_ext.h
+@@ -66,4 +66,24 @@ struct br_ext_info {
+ 
+ void nat25_db_cleanup(_adapter *priv);
+ 
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern void dhcp_flag_bcast(_adapter *priv, struct sk_buff *skb);
++
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern void nat25_db_expire(_adapter *priv);
++
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern int nat25_db_handle(_adapter *priv, struct sk_buff *skb, int method);
++
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern int nat25_handle_frame(_adapter *priv, struct sk_buff *skb);
++
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern void *scdb_findEntry(_adapter *priv, unsigned char *macAddr, unsigned char *ipAddr);
++
+ #endif /* _RTW_BR_EXT_H_ */
+diff --git a/drivers/net/wireless/rtl8189fs/include/rtw_mlme_ext.h b/drivers/net/wireless/rtl8189fs/include/rtw_mlme_ext.h
+index b4e532c..5b54885 100644
+--- a/drivers/net/wireless/rtl8189fs/include/rtw_mlme_ext.h
++++ b/drivers/net/wireless/rtl8189fs/include/rtw_mlme_ext.h
+@@ -1308,4 +1308,8 @@ static struct fwevent wlanevents[] = {
+ 
+ #endif/* _RTW_MLME_EXT_C_ */
+ 
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern int update_hidden_ssid(u8 *ies, u32 ies_len, u8 hidden_ssid_mode);
++
+ #endif
+diff --git a/drivers/net/wireless/rtl8189fs/include/rtw_recv.h b/drivers/net/wireless/rtl8189fs/include/rtw_recv.h
+index 90abfee..5a10310 100644
+--- a/drivers/net/wireless/rtl8189fs/include/rtw_recv.h
++++ b/drivers/net/wireless/rtl8189fs/include/rtw_recv.h
+@@ -821,4 +821,12 @@ u8 adapter_allow_bmc_data_rx(_adapter *adapter);
+ s32 pre_recv_entry(union recv_frame *precvframe, u8 *pphy_status);
+ void count_rx_stats(_adapter *padapter, union recv_frame *prframe, struct sta_info *sta);
+ 
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern sint recv_decache(union recv_frame *precv_frame);
++
++
++/* -Wmissing-prototypes: cross-file declarations */
++extern sint validate_recv_mgnt_frame(PADAPTER padapter, union recv_frame *precv_frame);
++
+ #endif
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/custom_gpio_linux.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/custom_gpio_linux.c
+index 23401b7..a2ce8bc 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/custom_gpio_linux.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/custom_gpio_linux.c
+@@ -25,6 +25,7 @@
+ #ifdef CONFIG_RTL8188E
+ #include <mach/regulator.h>
+ #include <linux/regulator/consumer.h>
++#include "custom_gpio.h"
+ #endif /* CONFIG_RTL8188E */
+ 
+ #ifndef GPIO_WIFI_POWER
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/ioctl_cfg80211.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/ioctl_cfg80211.c
+index d78fbe6..dbc18f0 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/ioctl_cfg80211.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/ioctl_cfg80211.c
+@@ -444,31 +444,31 @@ exit:
+ }
+ #endif /* (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0)) */
+ 
+-void rtw_2g_channels_init(struct ieee80211_channel *channels)
++static void rtw_2g_channels_init(struct ieee80211_channel *channels)
+ {
+ 	_rtw_memcpy((void *)channels, (void *)rtw_2ghz_channels, sizeof(rtw_2ghz_channels));
+ }
+ 
+-void rtw_5g_channels_init(struct ieee80211_channel *channels)
++static void rtw_5g_channels_init(struct ieee80211_channel *channels)
+ {
+ 	_rtw_memcpy((void *)channels, (void *)rtw_5ghz_a_channels, sizeof(rtw_5ghz_a_channels));
+ }
+ 
+-void rtw_2g_rates_init(struct ieee80211_rate *rates)
++static void rtw_2g_rates_init(struct ieee80211_rate *rates)
+ {
+ 	_rtw_memcpy(rates, rtw_g_rates,
+ 		sizeof(struct ieee80211_rate) * RTW_G_RATES_NUM
+ 	);
+ }
+ 
+-void rtw_5g_rates_init(struct ieee80211_rate *rates)
++static void rtw_5g_rates_init(struct ieee80211_rate *rates)
+ {
+ 	_rtw_memcpy(rates, rtw_a_rates,
+ 		sizeof(struct ieee80211_rate) * RTW_A_RATES_NUM
+ 	);
+ }
+ 
+-struct ieee80211_supported_band *rtw_spt_band_alloc(BAND_TYPE band)
++static struct ieee80211_supported_band *rtw_spt_band_alloc(BAND_TYPE band)
+ {
+ 	struct ieee80211_supported_band *spt_band = NULL;
+ 	int n_channels, n_bitrates;
+@@ -511,7 +511,7 @@ exit:
+ 	return spt_band;
+ }
+ 
+-void rtw_spt_band_free(struct ieee80211_supported_band *spt_band)
++static void rtw_spt_band_free(struct ieee80211_supported_band *spt_band)
+ {
+ 	u32 size = 0;
+ 
+@@ -598,7 +598,7 @@ static const struct ieee80211_txrx_stypes
+ };
+ #endif
+ 
+-NDIS_802_11_NETWORK_INFRASTRUCTURE nl80211_iftype_to_rtw_network_type(enum nl80211_iftype type)
++static NDIS_802_11_NETWORK_INFRASTRUCTURE nl80211_iftype_to_rtw_network_type(enum nl80211_iftype type)
+ {
+ 	switch (type) {
+ 	case NL80211_IFTYPE_ADHOC:
+@@ -631,7 +631,7 @@ NDIS_802_11_NETWORK_INFRASTRUCTURE nl80211_iftype_to_rtw_network_type(enum nl802
+ 	}
+ }
+ 
+-u32 nl80211_iftype_to_rtw_mlme_state(enum nl80211_iftype type)
++static u32 nl80211_iftype_to_rtw_mlme_state(enum nl80211_iftype type)
+ {
+ 	switch (type) {
+ 	case NL80211_IFTYPE_ADHOC:
+@@ -2047,7 +2047,7 @@ static int cfg80211_rtw_set_default_key(struct wiphy *wiphy,
+ }
+ 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 30))
+-int cfg80211_rtw_set_default_mgmt_key(struct wiphy *wiphy,
++static int cfg80211_rtw_set_default_mgmt_key(struct wiphy *wiphy,
+ 	struct net_device *ndev, 
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 1, 0))
+ 	int link_id,
+@@ -2571,7 +2571,7 @@ void rtw_cfg80211_unlink_bss(_adapter *padapter, struct wlan_network *pnetwork)
+ }
+ 
+ /* if target wps scan ongoing, target_ssid is filled */
+-int rtw_cfg80211_is_target_wps_scan(struct cfg80211_scan_request *scan_req, struct cfg80211_ssid *target_ssid)
++static int rtw_cfg80211_is_target_wps_scan(struct cfg80211_scan_request *scan_req, struct cfg80211_ssid *target_ssid)
+ {
+ 	int ret = 0;
+ 
+@@ -5134,7 +5134,7 @@ const char *_nl80211_mesh_power_mode_str[] = {
+ #define nl80211_mesh_power_mode_str(_p) ((_p <= NL80211_MESH_POWER_MAX) ? _nl80211_mesh_power_mode_str[_p] : _nl80211_mesh_power_mode_str[0])
+ #endif
+ 
+-void dump_station_parameters(void *sel, struct wiphy *wiphy, const struct station_parameters *params)
++static void dump_station_parameters(void *sel, struct wiphy *wiphy, const struct station_parameters *params)
+ {
+ #if DBG_RTW_CFG80211_STA_PARAM
+ 	if (params->supported_rates_len) {
+@@ -5664,7 +5664,7 @@ exit:
+ 	return ret;
+ }
+ 
+-struct sta_info *rtw_sta_info_get_by_idx(struct sta_priv *pstapriv, const int idx, u8 *asoc_list_num)
++static struct sta_info *rtw_sta_info_get_by_idx(struct sta_priv *pstapriv, const int idx, u8 *asoc_list_num)
+ {
+ 	_list	*phead, *plist;
+ 	struct sta_info *psta = NULL;
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/os_intfs.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/os_intfs.c
+index 0abc43a..44d35c5 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/os_intfs.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/os_intfs.c
+@@ -926,7 +926,7 @@ static void rtw_regsty_load_tx_ac_lifetime(struct registry_priv *regsty)
+ }
+ #endif
+ 
+-void rtw_regsty_load_target_tx_power(struct registry_priv *regsty)
++static void rtw_regsty_load_target_tx_power(struct registry_priv *regsty)
+ {
+ 	int path, rs;
+ 	int *target_tx_pwr;
+@@ -1451,7 +1451,7 @@ static struct net_device_stats *rtw_net_get_stats(struct net_device *pnetdev)
+ static const u16 rtw_1d_to_queue[8] = { 2, 3, 3, 2, 1, 1, 0, 0 };
+ 
+ /* Given a data frame determine the 802.1p/1d tag to use. */
+-unsigned int rtw_classify8021d(struct sk_buff *skb)
++static unsigned int rtw_classify8021d(struct sk_buff *skb)
+ {
+ 	unsigned int dscp;
+ 
+@@ -1596,7 +1596,7 @@ void rtw_ndev_notifier_unregister(void)
+ 	unregister_netdevice_notifier(&rtw_ndev_notifier);
+ }
+ 
+-int rtw_ndev_init(struct net_device *dev)
++static int rtw_ndev_init(struct net_device *dev)
+ {
+ 	_adapter *adapter = rtw_netdev_priv(dev);
+ 
+@@ -1609,7 +1609,7 @@ int rtw_ndev_init(struct net_device *dev)
+ 	return 0;
+ }
+ 
+-void rtw_ndev_uninit(struct net_device *dev)
++static void rtw_ndev_uninit(struct net_device *dev)
+ {
+ 	_adapter *adapter = rtw_netdev_priv(dev);
+ 
+@@ -1669,7 +1669,7 @@ int rtw_init_netdev_name(struct net_device *pnetdev, const char *ifname)
+ 	return 0;
+ }
+ 
+-void rtw_hook_if_ops(struct net_device *ndev)
++static void rtw_hook_if_ops(struct net_device *ndev)
+ {
+ #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 29))
+ 	ndev->netdev_ops = &rtw_netdev_ops;
+@@ -1751,7 +1751,7 @@ struct net_device *rtw_init_netdev(_adapter *old_padapter)
+ 	return pnetdev;
+ }
+ 
+-int rtw_os_ndev_alloc(_adapter *adapter)
++static int rtw_os_ndev_alloc(_adapter *adapter)
+ {
+ 	int ret = _FAIL;
+ 	struct net_device *ndev = NULL;
+@@ -1805,7 +1805,7 @@ void rtw_os_ndev_free(_adapter *adapter)
+ 	}
+ }
+ 
+-int rtw_os_ndev_register(_adapter *adapter, const char *name)
++static int rtw_os_ndev_register(_adapter *adapter, const char *name)
+ {
+ 	struct dvobj_priv *dvobj = adapter_to_dvobj(adapter);
+ 	int ret = _SUCCESS;
+@@ -1946,7 +1946,7 @@ void rtw_os_ndev_deinit(_adapter *adapter)
+ 	rtw_os_ndev_free(adapter);
+ }
+ 
+-int rtw_os_ndevs_alloc(struct dvobj_priv *dvobj)
++static int rtw_os_ndevs_alloc(struct dvobj_priv *dvobj)
+ {
+ 	int i, status = _SUCCESS;
+ 	_adapter *adapter;
+@@ -1999,7 +1999,7 @@ exit:
+ 	return status;
+ }
+ 
+-void rtw_os_ndevs_free(struct dvobj_priv *dvobj)
++static void rtw_os_ndevs_free(struct dvobj_priv *dvobj)
+ {
+ 	int i;
+ 	_adapter *adapter = NULL;
+@@ -2131,7 +2131,7 @@ void rtw_stop_drv_threads(_adapter *padapter)
+ 	rtw_hal_stop_thread(padapter);
+ }
+ 
+-u8 rtw_init_default_value(_adapter *padapter)
++static u8 rtw_init_default_value(_adapter *padapter)
+ {
+ 	u8 ret  = _SUCCESS;
+ 	struct registry_priv *pregistrypriv = &padapter->registrypriv;
+@@ -2800,7 +2800,7 @@ void rtw_intf_stop(_adapter *adapter)
+ 
+ #ifdef CONFIG_CONCURRENT_MODE
+ #ifndef CONFIG_NEW_NETDEV_HDL
+-int _netdev_vir_if_open(struct net_device *pnetdev)
++static int _netdev_vir_if_open(struct net_device *pnetdev)
+ {
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);
+ 	_adapter *primary_padapter = GET_PRIMARY_ADAPTER(padapter);
+@@ -2892,7 +2892,7 @@ _netdev_virtual_iface_open_error:
+ 
+ }
+ 
+-int netdev_vir_if_open(struct net_device *pnetdev)
++static int netdev_vir_if_open(struct net_device *pnetdev)
+ {
+ 	int ret;
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(pnetdev);
+@@ -3066,7 +3066,7 @@ exit:
+ 	return padapter;
+ }
+ 
+-void rtw_drv_stop_vir_if(_adapter *padapter)
++static void rtw_drv_stop_vir_if(_adapter *padapter)
+ {
+ 	struct net_device *pnetdev = NULL;
+ 	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
+@@ -3108,7 +3108,7 @@ void rtw_drv_stop_vir_if(_adapter *padapter)
+ 	rtw_cancel_all_timer(padapter);
+ }
+ 
+-void rtw_drv_free_vir_if(_adapter *padapter)
++static void rtw_drv_free_vir_if(_adapter *padapter)
+ {
+ 	if (padapter == NULL)
+ 		return;
+@@ -3272,7 +3272,7 @@ void rtw_inetaddr_notifier_unregister(void)
+ #endif
+ }
+ 
+-int rtw_os_ndevs_register(struct dvobj_priv *dvobj)
++static int rtw_os_ndevs_register(struct dvobj_priv *dvobj)
+ {
+ 	int i, status = _SUCCESS;
+ 	struct registry_priv *regsty = dvobj_to_regsty(dvobj);
+@@ -3731,7 +3731,7 @@ int netdev_open(struct net_device *pnetdev)
+ }
+ 
+ #ifdef CONFIG_IPS
+-int  ips_netdrv_open(_adapter *padapter)
++static int  ips_netdrv_open(_adapter *padapter)
+ {
+ 	int status = _SUCCESS;
+ 	/* struct pwrctrl_priv	*pwrpriv = adapter_to_pwrctl(padapter); */
+@@ -4762,7 +4762,7 @@ int rtw_suspend_ap_wow(_adapter *padapter)
+ #endif /* #ifdef CONFIG_AP_WOWLAN */
+ 
+ 
+-int rtw_suspend_normal(_adapter *padapter)
++static int rtw_suspend_normal(_adapter *padapter)
+ {
+ 	int ret = _SUCCESS;
+ 
+@@ -5172,7 +5172,7 @@ exit:
+ }
+ #endif /* #ifdef CONFIG_APWOWLAN */
+ 
+-void rtw_mi_resume_process_normal(_adapter *padapter)
++static void rtw_mi_resume_process_normal(_adapter *padapter)
+ {
+ 	int i;
+ 	_adapter *iface;
+@@ -5201,7 +5201,7 @@ void rtw_mi_resume_process_normal(_adapter *padapter)
+ 	}
+ }
+ 
+-int rtw_resume_process_normal(_adapter *padapter)
++static int rtw_resume_process_normal(_adapter *padapter)
+ {
+ 	struct net_device *pnetdev;
+ 	struct pwrctrl_priv *pwrpriv;
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_android.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_android.c
+index 93a95b3..aacef53 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_android.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_android.c
+@@ -363,7 +363,7 @@ int rtw_android_cmdstr_to_num(char *cmdstr)
+ 	return cmd_num;
+ }
+ 
+-int rtw_android_get_rssi(struct net_device *net, char *command, int total_len)
++static int rtw_android_get_rssi(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(net);
+ 	struct	mlme_priv	*pmlmepriv = &(padapter->mlmepriv);
+@@ -378,7 +378,7 @@ int rtw_android_get_rssi(struct net_device *net, char *command, int total_len)
+ 	return bytes_written;
+ }
+ 
+-int rtw_android_get_link_speed(struct net_device *net, char *command, int total_len)
++static int rtw_android_get_link_speed(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(net);
+ 	int bytes_written = 0;
+@@ -390,7 +390,7 @@ int rtw_android_get_link_speed(struct net_device *net, char *command, int total_
+ 	return bytes_written;
+ }
+ 
+-int rtw_android_get_macaddr(struct net_device *net, char *command, int total_len)
++static int rtw_android_get_macaddr(struct net_device *net, char *command, int total_len)
+ {
+ 	int bytes_written = 0;
+ 
+@@ -398,7 +398,7 @@ int rtw_android_get_macaddr(struct net_device *net, char *command, int total_len
+ 	return bytes_written;
+ }
+ 
+-int rtw_android_set_country(struct net_device *net, char *command, int total_len)
++static int rtw_android_set_country(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	char *country_code = command + strlen(android_wifi_cmd_str[ANDROID_WIFI_CMD_COUNTRY]) + 1;
+@@ -409,7 +409,7 @@ int rtw_android_set_country(struct net_device *net, char *command, int total_len
+ 	return (ret == _SUCCESS) ? 0 : -1;
+ }
+ 
+-int rtw_android_get_p2p_dev_addr(struct net_device *net, char *command, int total_len)
++static int rtw_android_get_p2p_dev_addr(struct net_device *net, char *command, int total_len)
+ {
+ 	int bytes_written = 0;
+ 
+@@ -420,7 +420,7 @@ int rtw_android_get_p2p_dev_addr(struct net_device *net, char *command, int tota
+ 	return bytes_written;
+ }
+ 
+-int rtw_android_set_block_scan(struct net_device *net, char *command, int total_len)
++static int rtw_android_set_block_scan(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	char *block_value = command + strlen(android_wifi_cmd_str[ANDROID_WIFI_CMD_BLOCK_SCAN]) + 1;
+@@ -432,7 +432,7 @@ int rtw_android_set_block_scan(struct net_device *net, char *command, int total_
+ 	return 0;
+ }
+ 
+-int rtw_android_set_block(struct net_device *net, char *command, int total_len)
++static int rtw_android_set_block(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	char *block_value = command + strlen(android_wifi_cmd_str[ANDROID_WIFI_CMD_BLOCK]) + 1;
+@@ -444,7 +444,7 @@ int rtw_android_set_block(struct net_device *net, char *command, int total_len)
+ 	return 0;
+ }
+ 
+-int rtw_android_setband(struct net_device *net, char *command, int total_len)
++static int rtw_android_setband(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	char *arg = command + strlen(android_wifi_cmd_str[ANDROID_WIFI_CMD_SETBAND]) + 1;
+@@ -457,7 +457,7 @@ int rtw_android_setband(struct net_device *net, char *command, int total_len)
+ 	return (ret == _SUCCESS) ? 0 : -1;
+ }
+ 
+-int rtw_android_getband(struct net_device *net, char *command, int total_len)
++static int rtw_android_getband(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	int bytes_written = 0;
+@@ -468,7 +468,7 @@ int rtw_android_getband(struct net_device *net, char *command, int total_len)
+ }
+ 
+ #ifdef CONFIG_WFD
+-int rtw_android_set_miracast_mode(struct net_device *net, char *command, int total_len)
++static int rtw_android_set_miracast_mode(struct net_device *net, char *command, int total_len)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(net);
+ 	struct wifi_display_info *wfd_info = &adapter->wfd_info;
+@@ -504,7 +504,7 @@ exit:
+ }
+ #endif /* CONFIG_WFD */
+ 
+-int get_int_from_command(char *pcmd)
++static int get_int_from_command(char *pcmd)
+ {
+ 	int i = 0;
+ 
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_cfgvendor.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_cfgvendor.c
+index 841c015..2a1eeed 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_cfgvendor.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_cfgvendor.c
+@@ -139,7 +139,7 @@ int dbg_rtw_cfg80211_vendor_cmd_reply(struct sk_buff *skb
+ 	dbg_rtw_cfg80211_vendor_cmd_reply(skb, MSTAT_FUNC_CFG_VENDOR | MSTAT_TYPE_SKB, __FUNCTION__, __LINE__)
+ #else
+ 
+-struct sk_buff *rtw_cfg80211_vendor_event_alloc(
++static struct sk_buff *rtw_cfg80211_vendor_event_alloc(
+ 	struct wiphy *wiphy, struct wireless_dev *wdev, int len, int event_id, gfp_t gfp)
+ {
+ 	struct sk_buff *skb;
+@@ -241,7 +241,7 @@ static int rtw_cfgvendor_send_cmd_reply(struct wiphy *wiphy,
+ #define MAX_FEATURE_SET_CONCURRRENT_GROUPS  3
+ 
+ #include <hal_data.h>
+-int rtw_dev_get_feature_set(struct net_device *dev)
++static int rtw_dev_get_feature_set(struct net_device *dev)
+ {
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+ 	HAL_DATA_TYPE *HalData = GET_HAL_DATA(adapter);
+@@ -280,7 +280,7 @@ int rtw_dev_get_feature_set(struct net_device *dev)
+ 	return feature_set;
+ }
+ 
+-int *rtw_dev_get_feature_set_matrix(struct net_device *dev, int *num)
++static int *rtw_dev_get_feature_set_matrix(struct net_device *dev, int *num)
+ {
+ 	int feature_set_full, mem_needed;
+ 	int *ret;
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_proc.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_proc.c
+index b32a880..ca96d4e 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_proc.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/rtw_proc.c
+@@ -519,7 +519,7 @@ ssize_t proc_set_led_config(struct file *file, const char __user *buffer, size_t
+ #endif /* CONFIG_RTW_LED */
+ 
+ #ifdef CONFIG_AP_MODE
+-int proc_get_aid_status(struct seq_file *m, void *v)
++static int proc_get_aid_status(struct seq_file *m, void *v)
+ {
+ 	struct net_device *dev = m->private;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -529,7 +529,7 @@ int proc_get_aid_status(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
+-ssize_t proc_set_aid_status(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_aid_status(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *dev = data;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -562,7 +562,7 @@ ssize_t proc_set_aid_status(struct file *file, const char __user *buffer, size_t
+ 	return count;
+ }
+ 
+-int proc_get_ap_isolate(struct seq_file *m, void *v)
++static int proc_get_ap_isolate(struct seq_file *m, void *v)
+ {
+ 	struct net_device *dev = m->private;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -572,7 +572,7 @@ int proc_get_ap_isolate(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
+-ssize_t proc_set_ap_isolate(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_ap_isolate(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *dev = data;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -1287,7 +1287,7 @@ static int proc_get_macaddr_acl(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
+-ssize_t proc_set_macaddr_acl(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_macaddr_acl(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *dev = data;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -1745,7 +1745,7 @@ exit:
+ #endif /* CONFIG_DFS_MASTER */
+ 
+ #ifdef CONFIG_80211N_HT
+-int proc_get_rx_ampdu_size_limit(struct seq_file *m, void *v)
++static int proc_get_rx_ampdu_size_limit(struct seq_file *m, void *v)
+ {
+ 	struct net_device *dev = m->private;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -1755,7 +1755,7 @@ int proc_get_rx_ampdu_size_limit(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
+-ssize_t proc_set_rx_ampdu_size_limit(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_rx_ampdu_size_limit(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *dev = data;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -2993,7 +2993,7 @@ int proc_get_mbid_cam_cache(struct seq_file *m, void *v)
+ }
+ #endif /* CONFIG_MBSSID_CAM */
+ 
+-int proc_get_mac_addr(struct seq_file *m, void *v)
++static int proc_get_mac_addr(struct seq_file *m, void *v)
+ {
+ 	struct net_device *dev = m->private;
+ 	_adapter *adapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -3374,7 +3374,7 @@ static ssize_t proc_set_napi_th(struct file *file, const char __user *buffer, si
+ #endif /* CONFIG_RTW_NAPI_DYNAMIC */
+ 
+ 
+-ssize_t proc_set_dynamic_agg_enable(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_dynamic_agg_enable(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *dev = data;
+ 	_adapter *padapter = (_adapter *)rtw_netdev_priv(dev);
+@@ -4537,7 +4537,7 @@ ssize_t proc_set_odm_adaptivity(struct file *file, const char __user *buffer, si
+ static char *phydm_msg = NULL;
+ #define PHYDM_MSG_LEN	80*24
+ 
+-int proc_get_phydm_cmd(struct seq_file *m, void *v)
++static int proc_get_phydm_cmd(struct seq_file *m, void *v)
+ {
+ 	struct net_device *netdev;
+ 	PADAPTER padapter;
+@@ -4564,7 +4564,7 @@ int proc_get_phydm_cmd(struct seq_file *m, void *v)
+ 	return 0;
+ }
+ 
+-ssize_t proc_set_phydm_cmd(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
++static ssize_t proc_set_phydm_cmd(struct file *file, const char __user *buffer, size_t count, loff_t *pos, void *data)
+ {
+ 	struct net_device *netdev;
+ 	PADAPTER padapter;
+@@ -4682,7 +4682,7 @@ static const struct file_operations rtw_odm_proc_sseq_fops = {
+ };
+ #endif
+ 
+-struct proc_dir_entry *rtw_odm_proc_init(struct net_device *dev)
++static struct proc_dir_entry *rtw_odm_proc_init(struct net_device *dev)
+ {
+ 	struct proc_dir_entry *dir_odm = NULL;
+ 	struct proc_dir_entry *entry = NULL;
+@@ -4725,7 +4725,7 @@ exit:
+ 	return dir_odm;
+ }
+ 
+-void rtw_odm_proc_deinit(_adapter	*adapter)
++static void rtw_odm_proc_deinit(_adapter	*adapter)
+ {
+ 	struct proc_dir_entry *dir_odm = NULL;
+ 	int i;
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/sdio_intf.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/sdio_intf.c
+index 4e7117a..aba62d8 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/sdio_intf.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/sdio_intf.c
+@@ -687,7 +687,7 @@ static void sd_intf_stop(PADAPTER padapter)
+ PADAPTER g_test_adapter = NULL;
+ #endif /* RTW_SUPPORT_PLATFORM_SHUTDOWN */
+ 
+-_adapter *rtw_sdio_primary_adapter_init(struct dvobj_priv *dvobj)
++static _adapter *rtw_sdio_primary_adapter_init(struct dvobj_priv *dvobj)
+ {
+ 	int status = _FAIL;
+ 	PADAPTER padapter = NULL;
+diff --git a/drivers/net/wireless/rtl8189fs/os_dep/linux/xmit_linux.c b/drivers/net/wireless/rtl8189fs/os_dep/linux/xmit_linux.c
+index 3c42eb5..dac4d25 100644
+--- a/drivers/net/wireless/rtl8189fs/os_dep/linux/xmit_linux.c
++++ b/drivers/net/wireless/rtl8189fs/os_dep/linux/xmit_linux.c
+@@ -373,7 +373,7 @@ void rtw_os_wake_queue_at_free_stainfo(_adapter *padapter, int *qcnt_freed)
+ }
+ 
+ #ifdef CONFIG_TX_MCAST2UNI
+-int rtw_mlcst2unicst(_adapter *padapter, struct sk_buff *skb)
++static int rtw_mlcst2unicst(_adapter *padapter, struct sk_buff *skb)
+ {
+ 	struct	sta_priv *pstapriv = &padapter->stapriv;
+ 	struct xmit_priv *pxmitpriv = &padapter->xmitpriv;
+diff --git a/drivers/net/wireless/rtl8189fs/platform/platform_ops.c b/drivers/net/wireless/rtl8189fs/platform/platform_ops.c
+index 10766aa..627cf32 100644
+--- a/drivers/net/wireless/rtl8189fs/platform/platform_ops.c
++++ b/drivers/net/wireless/rtl8189fs/platform/platform_ops.c
+@@ -12,6 +12,7 @@
+  * more details.
+  *
+  *****************************************************************************/
++#include "platform_ops.h"
+ #ifndef CONFIG_PLATFORM_OPS
+ /*
+  * Return:
