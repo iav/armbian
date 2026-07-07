@@ -602,6 +602,18 @@ driver_uwe5622() {
 		fi
 
 		process_patch_file "${SRC}/patch/misc/wireless-uwe5622/wireless-uwe5622-Fix-missing-prototypes.patch" "applying"
+
+		# net_device.dev_addr is const upstream; on rockchip the in-tree helper
+		# writes it directly (adjust-for-rockchip), so passing/reading it as a
+		# plain u8 * breaks clang -Werror. sun* is already handled by
+		# fix-setting-mac-address-for-netdev; on >= 6.19 the memcpy/cfg80211
+		# sites are already converted by uwe5622-v6.19.
+		if [[ "$LINUXFAMILY" == rockchip* || "$LINUXFAMILY" == "rk35xx" ]]; then
+			process_patch_file "${SRC}/patch/misc/wireless-uwe5622/uwe5622-rockchip-clang-callsite.patch" "applying"
+			if linux-version compare "${version}" lt 6.19; then
+				process_patch_file "${SRC}/patch/misc/wireless-uwe5622/uwe5622-rockchip-clang-pre619.patch" "applying"
+			fi
+		fi
 	fi
 }
 

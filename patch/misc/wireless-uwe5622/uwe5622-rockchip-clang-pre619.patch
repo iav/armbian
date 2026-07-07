@@ -1,0 +1,51 @@
+From: Armbian <info@armbian.com>
+Date: Mon, 7 Jul 2026 00:00:00 +0000
+Subject: [PATCH] uwe5622: fix const dev_addr memcpy/read for clang (< 6.19)
+
+net_device.dev_addr became const (const unsigned char *) upstream. On
+kernels before 6.19 the driver still writes it with memcpy() and reads it
+into a plain u8 *, which clang rejects under
+-Werror,-Wincompatible-pointer-types-discards-qualifiers. GCC only warned.
+
+- sprdwl_set_random_mac(): the two memcpy(dev->dev_addr, ...) writes become
+  dev_addr_set() (already used elsewhere in this driver).
+- cfg80211.c: dev_addr is only read here (handed to firmware), so cast to
+  u8 * at the point of use.
+
+From 6.19 on, uwe5622-v6.19 already converts both sites, so this patch is
+only applied for kernels < 6.19.
+
+Signed-off-by: Armbian <info@armbian.com>
+---
+ drivers/net/wireless/uwe5622/unisocwifi/cfg80211.c | 2 +-
+ drivers/net/wireless/uwe5622/unisocwifi/main.c     | 4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/drivers/net/wireless/uwe5622/unisocwifi/main.c
++++ b/drivers/net/wireless/uwe5622/unisocwifi/main.c
+@@ -944,12 +944,12 @@
+ 		if (!is_zero_ether_addr(sa->sa_data)) {
+ 			vif->has_rand_mac = true;
+ 			memcpy(vif->random_mac, sa->sa_data, ETH_ALEN);
+-			memcpy(dev->dev_addr, sa->sa_data, ETH_ALEN);
++			dev_addr_set(dev, sa->sa_data);
+ 		} else {
+ 			vif->has_rand_mac = false;
+ 			netdev_info(dev, "need clear random mac for sta/softap mode\n");
+ 			memset(vif->random_mac, 0, ETH_ALEN);
+-			memcpy(dev->dev_addr, vif->mac, ETH_ALEN);
++			dev_addr_set(dev, vif->mac);
+ 		}
+ 	}
+ 	/*return success to pass vts test*/
+--- a/drivers/net/wireless/uwe5622/unisocwifi/cfg80211.c
++++ b/drivers/net/wireless/uwe5622/unisocwifi/cfg80211.c
+@@ -429,7 +429,7 @@
+ 	if (!vif->ndev)
+ 		mac = vif->wdev.address;
+ 	else
+-		mac = vif->ndev->dev_addr;
++		mac = (u8 *)vif->ndev->dev_addr;
+ 
+ 	if (sprdwl_open_fw(priv, &vif_ctx_id, vif->mode, mac)) {
+ 		wl_ndev_log(L_ERR, vif->ndev, "%s failed!\n", __func__);

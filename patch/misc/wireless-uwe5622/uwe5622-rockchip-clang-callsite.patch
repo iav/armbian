@@ -1,0 +1,35 @@
+From: Armbian <info@armbian.com>
+Date: Mon, 7 Jul 2026 00:00:00 +0000
+Subject: [PATCH] uwe5622: cast const dev_addr at sprdwl_set_mac_addr call (clang)
+
+net_device.dev_addr became const (const unsigned char *) upstream.
+sprdwl_register_netdev() passes it to sprdwl_set_mac_addr() as a writable
+u8 * output buffer, which clang rejects under
+-Werror,-Wincompatible-pointer-types-discards-qualifiers. GCC only warned.
+
+On rockchip the helper also writes ndev->dev_addr directly via
+dev_addr_set() (see uwe5622-adjust-for-rockchip-post-6.1), while its other
+branches fill the passed buffer, so the buffer must alias ndev->dev_addr.
+Cast away const at the call site to keep that aliasing; behaviour is
+identical to the pre-const code. The call runs before register_netdevice(),
+so no dev_addr shadow tree exists yet.
+
+This site is not touched by the sun*-only fix-setting-mac-address patch nor
+by uwe5622-v6.19, so it is applied for rockchip/rk35xx across the range.
+
+Signed-off-by: Armbian <info@armbian.com>
+---
+ drivers/net/wireless/uwe5622/unisocwifi/main.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/uwe5622/unisocwifi/main.c
++++ b/drivers/net/wireless/uwe5622/unisocwifi/main.c
+@@ -1448,7 +1448,7 @@
+ 	ndev->features |= NETIF_F_SG;
+ 	SET_NETDEV_DEV(ndev, wiphy_dev(priv->wiphy));
+ 
+-	sprdwl_set_mac_addr(vif, addr, ndev->dev_addr);
++	sprdwl_set_mac_addr(vif, addr, (u8 *)ndev->dev_addr);
+ 
+ #ifdef CONFIG_P2P_INTF
+ 	if (type == NL80211_IFTYPE_P2P_DEVICE)
