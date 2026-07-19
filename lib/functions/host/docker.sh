@@ -138,7 +138,8 @@ function docker_cli_prepare() {
 	[[ -z "${build_suffix}" ]] && build_suffix="${EPOCHREALTIME:-$(date +%s%N)}-$$-${RANDOM}${RANDOM}"
 	build_suffix="$(printf '%s' "${build_suffix}" | sha256sum 2> /dev/null | cut -c1-8)"
 	[[ -z "${build_suffix}" ]] && build_suffix="$(printf '%08x' "$$")" # no sha256sum: PID hex
-	declare -g DOCKER_ARMBIAN_INITIAL_IMAGE_TAG="armbian.local.only/armbian-build:${build_suffix}"
+	declare -g DOCKER_ARMBIAN_LOCAL_IMAGE_REPO="armbian.local.only/armbian-build"
+	declare -g DOCKER_ARMBIAN_INITIAL_IMAGE_TAG="${DOCKER_ARMBIAN_LOCAL_IMAGE_REPO}:${build_suffix}"
 	# declare -g DOCKER_ARMBIAN_BASE_IMAGE="${DOCKER_ARMBIAN_BASE_IMAGE:-"debian:trixie"}"
 	# declare -g DOCKER_ARMBIAN_BASE_IMAGE="${DOCKER_ARMBIAN_BASE_IMAGE:-"debian:bookworm"}"
 	# declare -g DOCKER_ARMBIAN_BASE_IMAGE="${DOCKER_ARMBIAN_BASE_IMAGE:-"debian:sid"}"
@@ -846,6 +847,22 @@ function docker_cleanup_old_images() {
 			done
 		fi
 	done
+
+	# Reap leftovers of the per-build tag (see DOCKER_ARMBIAN_INITIAL_IMAGE_TAG). Every run coins its
+	# own tag, so the "keep the newest 2" rule above never sees more than one image per tag and can
+	# never reap them; 'docker image prune' ignores them too, since they are tagged, not dangling.
+	# Group by repository instead, and only touch images Docker no longer counts in hours: a fresher
+	# one may belong to a build still in flight, possibly another user's on a shared daemon.
+	declare stale_image_id stale_image_age
+	while read -r stale_image_id stale_image_age; do
+		[[ -z "${stale_image_id}" ]] && continue
+		# CreatedSince stays in minutes/hours up to 48h and only then switches to days, so matching
+		# the coarser units leaves anything younger than two days alone.
+		if [[ "${stale_image_age}" =~ (days|weeks|months|years)\ ago$ ]]; then
+			display_alert "Removing leftover per-build image" "${stale_image_id} (${stale_image_age})" "debug"
+			docker rmi "${stale_image_id}" > /dev/null 2>&1 || true
+		fi
+	done < <(docker images --format '{{.ID}} {{.CreatedSince}}' "${DOCKER_ARMBIAN_LOCAL_IMAGE_REPO:-"armbian.local.only/armbian-build"}" 2> /dev/null)
 
 	display_alert "Docker cleanup complete" "dangling images removed, old armbian images pruned" "info"
 }
