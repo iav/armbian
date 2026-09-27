@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { board: "odroidn2", compiler: "clang", extensions: "arm64-compat-vdso" }
+          - { board: "helios4", compiler: "clang", extensions: "" }
     name: "${{ matrix.board }} edge kernel, ${{ matrix.compiler }}, ext: ${{ matrix.extensions || 'none' }}"
     steps:
       - uses: actions/checkout@v4
