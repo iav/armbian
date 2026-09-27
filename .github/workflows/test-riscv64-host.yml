@@ -1,0 +1,69 @@
+name: "Test: arm kernels on riscv64 host"
+
+on:
+  push:
+    branches: [ "test/riscv64-host" ]
+  workflow_dispatch:
+
+jobs:
+  kernel:
+    runs-on: ubuntu-24.04-riscv
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { board: "helios4", compiler: "gcc", extensions: "" }
+          - { board: "helios4", compiler: "clang", extensions: "" }
+    name: "${{ matrix.board }} edge kernel, ${{ matrix.compiler }}, ext: ${{ matrix.extensions || 'none' }}"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Host
+        run: |
+          uname -a
+          nproc
+          free -h
+          df -h .
+          id
+          docker version --format '{{.Server.Version}} {{.Server.Arch}}'
+
+      # A kernel may not fit in one job on this runner: each run resumes from the newest ccache.
+      - name: Restore ccache
+        uses: actions/cache/restore@v4
+        with:
+          path: cache/ccache
+          key: ccache-riscv64-host-${{ matrix.compiler }}-${{ matrix.board }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            ccache-riscv64-host-${{ matrix.compiler }}-${{ matrix.board }}-
+            ccache-riscv64-host-${{ matrix.compiler }}-
+
+      - name: Build kernel
+        timeout-minutes: 290
+        run: |
+          declare -a extra_args=()
+          [[ "${{ matrix.compiler }}" == "clang" ]] && extra_args+=("KERNEL_COMPILER=clang")
+          [[ -n "${{ matrix.extensions }}" ]] && extra_args+=("ENABLE_EXTENSIONS=${{ matrix.extensions }}")
+          ./compile.sh kernel BOARD=${{ matrix.board }} BRANCH=edge \
+            USE_CCACHE=yes PRIVATE_CCACHE=yes ARTIFACT_IGNORE_CACHE=yes "${extra_args[@]}"
+
+      - name: ccache stats
+        if: always()
+        run: |
+          sudo chmod -R a+rX cache/ccache 2> /dev/null || true
+          du -sh cache/ccache 2> /dev/null || echo "no cache/ccache"
+
+      - name: Save ccache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: cache/ccache
+          key: ccache-riscv64-host-${{ matrix.compiler }}-${{ matrix.board }}-${{ github.run_id }}-${{ github.run_attempt }}
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ matrix.board }}-${{ matrix.compiler }}
+          path: output/logs/
+          if-no-files-found: warn
