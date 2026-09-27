@@ -287,6 +287,8 @@ function kernel_package_callback_linux_image() {
 	fi
 
 	# Generate a control file
+	# KERNEL_{IMAGE,DTB,HEADERS}_EXTRA_PROVIDES and KERNEL_HEADERS_EXTRA_DEPENDS: comma-separated
+	# relations appended by extensions, e.g. for a kernel built for one target release.
 	cat <<- CONTROL_FILE > "${package_DEBIAN_dir}/control"
 		Package: ${package_name}
 		Version: ${artifact_version}
@@ -298,7 +300,7 @@ function kernel_package_callback_linux_image() {
 		Section: kernel
 		Priority: optional
 		Depends: initramfs-tools | linux-initramfs-tool
-		Provides: linux-image, linux-image-armbian, armbian-$BRANCH, wireguard-modules
+		Provides: linux-image, linux-image-armbian, armbian-$BRANCH, wireguard-modules${KERNEL_IMAGE_EXTRA_PROVIDES:+, ${KERNEL_IMAGE_EXTRA_PROVIDES}}
 		Description: Armbian Linux $BRANCH kernel image $kernel_version_family
 		 This package contains the Linux kernel, modules and corresponding other files.
 		 ${artifact_version_reason:-"${kernel_version_family}"}
@@ -420,7 +422,7 @@ function kernel_package_callback_linux_dtb() {
 		Package: ${package_name}
 		Architecture: ${ARCH}
 		Priority: optional
-		Provides: linux-dtb, linux-dtb-armbian, armbian-$BRANCH
+		Provides: linux-dtb, linux-dtb-armbian, armbian-$BRANCH${KERNEL_DTB_EXTRA_PROVIDES:+, ${KERNEL_DTB_EXTRA_PROVIDES}}
 		Description: Armbian Linux $BRANCH DTBs in /boot/dtb-${kernel_version_family}
 		 This package contains device tree blobs from the Linux kernel, version ${kernel_version_family}
 		 ${artifact_version_reason:-"${kernel_version_family}"}
@@ -598,8 +600,8 @@ function kernel_package_callback_linux_headers() {
 		Package: ${package_name}
 		Architecture: ${ARCH}
 		Priority: optional
-		Provides: linux-headers (= ${kernel_version}), linux-headers-armbian, armbian-$BRANCH
-		Depends: make, gcc, libc6-dev, bison, flex, libssl-dev, libelf-dev, pahole | dwarves
+		Provides: linux-headers (= ${kernel_version}), linux-headers-armbian, armbian-$BRANCH${KERNEL_HEADERS_EXTRA_PROVIDES:+, ${KERNEL_HEADERS_EXTRA_PROVIDES}}
+		Depends: make, gcc, libc6-dev, bison, flex, libssl-dev, libelf-dev, pahole | dwarves${KERNEL_HEADERS_EXTRA_DEPENDS:+, ${KERNEL_HEADERS_EXTRA_DEPENDS}}
 		Description: Armbian Linux $BRANCH headers ${kernel_version_family}
 		 This package provides kernel header files for ${kernel_version_family}
 		 .
