@@ -232,6 +232,15 @@ function kernel_config_finalize() {
 		# either way, remove the previous file
 		run_host_command_logged rm -f "${kernel_work_dir}/${previous_config_filename}"
 	fi
+
+	call_extension_method "kernel_config_finalized" <<- 'KERNEL_CONFIG_FINALIZED'
+		*the final kernel .config is in place, compilation has not started*
+		Called after olddefconfig, and after menuconfig if one ran.
+		`${kernel_work_dir}/.config` is the config the kernel will be built with.
+		Use it to check the result, e.g. that an option set in `custom_kernel_config`
+		survived Kconfig dependencies. Changes made here are not part of the kernel
+		artifact version.
+	KERNEL_CONFIG_FINALIZED
 }
 
 function kernel_config_export() {
