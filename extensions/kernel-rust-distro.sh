@@ -103,6 +103,14 @@ function custom_kernel_config__kernel_rust_distro() {
 	fi
 }
 
+function kernel_config_finalized__kernel_rust_distro() {
+	# Kconfig drops RUST silently when a dependency of `config RUST` (init/Kconfig) is unmet.
+	# shellcheck disable=SC2154 # kernel_work_dir is defined by the kernel build
+	if ! grep -q '^CONFIG_RUST=y' "${kernel_work_dir}/.config"; then
+		exit_with_error "${EXTENSION}: CONFIG_RUST is not set in the final kernel config" "see the dependencies of 'config RUST' in init/Kconfig"
+	fi
+}
+
 function pre_package_kernel_headers__kernel_rust_distro() {
 	# Out-of-tree Rust modules need the crate metadata (rust/*.rmeta), proc-macro
 	# dylibs (rust/*.so) and, with CONFIG_RUST_INLINE_HELPERS, rust/helpers/*.bc.
