@@ -1,0 +1,5 @@
+Module sources: https://github.com/Rust-for-Linux/rust-out-of-tree-module (tested at 00b5a8e),
+plus dkms.conf from this directory.
+rust-dkms-test.sh  - build the module against linux-headers in a clean trixie container.
+rust-qemu-test.sh  - boot an uefi-x86 image in qemu, build/load the module via DKMS, log to serial.
+riscv-resume.sh    - resume test/riscv64-host clang builds after a step timeout.
