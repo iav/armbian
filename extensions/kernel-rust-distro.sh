@@ -90,6 +90,12 @@ function custom_kernel_config__kernel_rust_distro() {
 	# https://docs.kernel.org/rust/quick-start.html
 	opts_y+=("RUST")
 
+	# RUST depends on !MODVERSIONS || GENDWARFKSYMS; Debian's Rust kernels drop MODVERSIONS too.
+	if [[ -f .config ]] && grep -q '^CONFIG_MODVERSIONS=y' .config; then
+		display_alert "${EXTENSION}: disabling MODVERSIONS" "CONFIG_RUST needs it off, or GENDWARFKSYMS" "info"
+	fi
+	opts_n+=("MODVERSIONS")
+
 	if [[ "${RUST_KERNEL_SAMPLES}" == "yes" ]]; then
 		display_alert "Enabling Rust sample modules" "${EXTENSION}" "info"
 		opts_y+=("SAMPLES" "SAMPLES_RUST")
