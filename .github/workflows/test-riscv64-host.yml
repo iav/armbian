@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { board: "helios4", compiler: "clang", extensions: "" }
+          - { board: "odroidn2", compiler: "clang", extensions: "arm64-compat-vdso" }
     name: "${{ matrix.board }} edge kernel, ${{ matrix.compiler }}, ext: ${{ matrix.extensions || 'none' }}"
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +35,7 @@ jobs:
           key: ccache-riscv64-host-${{ matrix.compiler }}-${{ matrix.board }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
             ccache-riscv64-host-${{ matrix.compiler }}-${{ matrix.board }}-
-            ccache-riscv64-host-${{ matrix.compiler }}-
+            ccache-riscv64-host-clang-36339536831-
 
       - name: Build kernel
         timeout-minutes: 290
@@ -49,6 +49,8 @@ jobs:
       - name: ccache stats
         if: always()
         run: |
+          # A timed-out step leaves the build container writing to the cache; tar would fail on it.
+          docker ps -q | xargs -r docker kill > /dev/null 2>&1 || true
           sudo chmod -R a+rX cache/ccache 2> /dev/null || true
           du -sh cache/ccache 2> /dev/null || echo "no cache/ccache"
 
