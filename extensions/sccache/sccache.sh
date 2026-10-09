@@ -104,9 +104,9 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 
 function extension_prepare_config__sccache() {
 	# Warn (don't abort) when env points sccache at more than one remote
-	# backend. sccache itself resolves precedence (GHA > S3 > Azure > GCS >
-	# Redis > Memcached > WebDAV > local); the warning just surfaces the
-	# misconfiguration in the build log.
+	# backend. sccache itself resolves precedence (S3 > Redis > Memcached >
+	# GCS > GHA > Azure > WebDAV > OSS > COS > local); the warning just
+	# surfaces the misconfiguration in the build log.
 	local backends_set=0
 	[[ -n "${SCCACHE_BUCKET}" ]] && ((backends_set++)) || true
 	[[ -n "${SCCACHE_WEBDAV_ENDPOINT}" ]] && ((backends_set++)) || true
@@ -114,7 +114,7 @@ function extension_prepare_config__sccache() {
 	[[ "${SCCACHE_GHA_ENABLED}" == "on" || "${SCCACHE_GHA_ENABLED}" == "true" ]] && ((backends_set++)) || true
 	if ((backends_set > 1)); then
 		display_alert "${EXTENSION}: multiple remote backends configured" \
-			"sccache will pick by built-in precedence (GHA > S3 > Redis > WebDAV)" "wrn"
+			"sccache will pick by built-in precedence (S3 > Redis > GHA > WebDAV)" "wrn"
 	fi
 
 	_ext_sccache_bootstrap_binary
@@ -174,23 +174,34 @@ function _ext_sccache_bootstrap_binary() {
 
 		mkdir -p "${bin_dir}"
 		local url="https://github.com/mozilla/sccache/releases/download/${ver}/sccache-${ver}-${triple}.tar.gz"
-		local tarball="${bin_dir}/sccache.tar.gz"
+		# A private scratch dir per build and an atomic rename into place, so
+		# concurrent first-time builds never read each other's partial files.
+		local tmp
+		tmp="$(mktemp -d "${bin_dir}/.download-XXXXXX")"
+		local tarball="${tmp}/sccache.tar.gz"
 
 		display_alert "${EXTENSION}: downloading sccache" "${ver} (${triple})" "info"
 		run_host_command_logged curl --fail --location --silent --show-error --output "${tarball}" "${url}" ||
-			exit_with_error "${EXTENSION}: failed to download" "${url}"
+			{
+				rm -rf "${tmp}"
+				exit_with_error "${EXTENSION}: failed to download" "${url}"
+			}
 
 		local got
 		got="$(sha256sum "${tarball}" | awk '{print $1}')"
 		if [[ "${got}" != "${sha}" ]]; then
-			rm -f "${tarball}"
+			rm -rf "${tmp}"
 			exit_with_error "${EXTENSION}: SHA256 mismatch" "expected ${sha}, got ${got}"
 		fi
 
-		run_host_command_logged tar -xzf "${tarball}" -C "${bin_dir}" --strip-components=1 "sccache-${ver}-${triple}/sccache" ||
-			exit_with_error "${EXTENSION}: tar extract failed" "${tarball}"
-		rm -f "${tarball}"
-		chmod +x "${real}"
+		run_host_command_logged tar -xzf "${tarball}" -C "${tmp}" --strip-components=1 "sccache-${ver}-${triple}/sccache" ||
+			{
+				rm -rf "${tmp}"
+				exit_with_error "${EXTENSION}: tar extract failed" "${tarball}"
+			}
+		chmod +x "${tmp}/sccache"
+		mv -f "${tmp}/sccache" "${real}"
+		rm -rf "${tmp}"
 	fi
 
 	_ext_sccache_write_shim "${shim}" "${real}"
@@ -337,7 +348,9 @@ function compile_prepare_vars__sccache() {
 	sccache --stop-server > /dev/null 2>&1 || true
 	# Start it here, from the full env: the first sccache call may otherwise
 	# be an `env -i make` (kernel olddefconfig), which carries no credentials.
-	sccache --start-server > /dev/null 2>&1 || true
+	# No idle exit, so it lasts until the kernel build; stopped at build exit.
+	SCCACHE_IDLE_TIMEOUT="${SCCACHE_IDLE_TIMEOUT:-0}" sccache --start-server > /dev/null 2>&1 || true
+	add_cleanup_handler _ext_sccache_stop_server
 
 	# Probe remote backend reachability through sccache itself, falling
 	# back to local-FS for the whole compilation if unreachable. Opt-out
@@ -348,6 +361,10 @@ function compile_prepare_vars__sccache() {
 	if [[ "${COMPILE_CACHE_SKIP_PROBE}" != "yes" && "${SCCACHE_SKIP_PROBE}" != "yes" ]]; then
 		_ext_sccache_probe_backend
 	fi
+}
+
+function _ext_sccache_stop_server() {
+	sccache --stop-server > /dev/null 2>&1 || true
 }
 
 # Compile a one-statement C file through sccache, then read its stats.
@@ -367,8 +384,9 @@ function _ext_sccache_probe_backend() {
 		return 0
 	fi
 
-	local cc
-	cc="$(command -v cc 2> /dev/null || command -v gcc 2> /dev/null || true)"
+	# Skip the host-cc wrappers in front of PATH: they would call sccache again.
+	local cc probe_path="${PATH//"${__ext_sccache_bin_dir}:"/}"
+	cc="$(PATH="${probe_path}" command -v cc 2> /dev/null || PATH="${probe_path}" command -v gcc 2> /dev/null || true)"
 	if [[ -z "${cc}" ]]; then
 		display_alert "${EXTENSION}: backend probe skipped" "no host C compiler in PATH" "wrn"
 		return 0
@@ -534,10 +552,14 @@ function _ext_sccache_rewrite_loopback() {
 	local var="$1" url="${!1:-}"
 	[[ -z "${url}" ]] && return 1
 
-	# Decompose: scheme://[userinfo@]host[:port][/path]
-	local scheme="${url%%://*}"
-	[[ "${scheme}" == "${url}" ]] && return 1
-	local rest="${url#*://}"
+	# Decompose: [scheme://][userinfo@]host[:port][/path]; Redis also takes a bare host:port.
+	local scheme="" rest="${url}"
+	if [[ "${url}" == *://* ]]; then
+		scheme="${url%%://*}"
+		rest="${url#*://}"
+	fi
+	# A unix socket is not reachable from the container under any host name.
+	[[ "${scheme}" == "unix" || "${scheme}" == "redis+unix" ]] && return 1
 
 	local userinfo=""
 	if [[ "${rest}" == *@* ]]; then
@@ -563,7 +585,7 @@ function _ext_sccache_rewrite_loopback() {
 			# Splice host only; preserve userinfo/port/path verbatim so a
 			# credential value containing "localhost" or "127.0.0.1" as a
 			# substring isn't silently mutated.
-			local new="${scheme}://${userinfo}host.docker.internal${port_path}"
+			local new="${scheme:+${scheme}://}${userinfo}host.docker.internal${port_path}"
 			export "${var?}=${new}"
 			# A KEY=value CLI argument is relaunched as is and would override the export inside the container.
 			if [[ -v "ARMBIAN_CLI_RELAUNCH_PARAMS[${var}]" ]]; then
