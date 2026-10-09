@@ -28,7 +28,7 @@
 # sccache's own default cache size is 10G; 5G is comfortable for
 # kernel+u-boot+ATF turns on a CAX21-class builder without hogging the
 # project cache disk.
-declare -g SCCACHE_PIN_VERSION="${SCCACHE_PIN_VERSION:-v0.15.0}"
+declare -g SCCACHE_PIN_VERSION="${SCCACHE_PIN_VERSION:-v0.18.0}"
 # SCCACHE_CACHE_SIZE default is applied later in compile_prepare_vars__sccache
 # (lib.config / user_config / extension_prepare_config can set COMPILE_CACHE_SIZE
 # between extension source time and compile time; resolving at source time would
@@ -39,13 +39,13 @@ declare -g SCCACHE_PIN_VERSION="${SCCACHE_PIN_VERSION:-v0.15.0}"
 # SCCACHE_PIN_VERSION is overridden, the bootstrap step will accept the
 # user-provided SCCACHE_SHA256_<TRIPLE> env override instead.
 declare -g -A __ext_sccache_sha256=(
-	["x86_64-unknown-linux-musl"]="782d2b5dd7ae0a55ebe368ab258114d0928d019ac2d949ab85d5d02f3926709e"
-	["aarch64-unknown-linux-musl"]="3a6a3712b49da3d263bf2d30d702de4302793016019e800bfb81c0c69401d8f8"
-	["armv7-unknown-linux-musleabi"]="c6d7171ee9216ec8035b9b639526f68d27c4a0b5e6f914ac0147d3153c3b2261"
-	["i686-unknown-linux-musl"]="cb4a90e7da62517a6595ed438765db1a0fba933c7c91818302130902942437b3"
-	["riscv64gc-unknown-linux-musl"]="d24b685ca21bf9388da5311c4dfe88de813acea84ca85b12d67f4e4b9a7a983a"
-	["loongarch64-unknown-linux-musl"]="60d56ba90a3e6cc616be84b3bd72fe44b3d6dedc5d51a50116a24e884a991f75"
-	["s390x-unknown-linux-musl"]="729618c5fe016aa553f372ec28bfeff4288ba5d99baee6dc04031336a789b6f1"
+	["x86_64-unknown-linux-musl"]="45f1447fbe231e3037bde351ef70677dd212216c8d62ae7ca409fecc4d6acc89"
+	["aarch64-unknown-linux-musl"]="2b3284d5da3b46a47dc4229e75bb7b88ac4aa99c8d754fb7d2f84997e5a4354a"
+	["armv7-unknown-linux-musleabi"]="5e1b69e95cee1b19f0d0669eb1b1597f51770fc602e4321adfea99143cac6ce9"
+	["i686-unknown-linux-musl"]="e23e961b549c3c40ac0d504e0d4a63a5da2ef1b44ac253c55bef55e755fdf340"
+	["riscv64gc-unknown-linux-musl"]="ee204961bae9c7033971a7a65e93e66431c8e2ca4af9123330ac3e94afacd4de"
+	["loongarch64-unknown-linux-musl"]="2c165dd599675a31be5d0e100e8df2bb22919d75ac711f9060acd96fcb7c6626"
+	["s390x-unknown-linux-musl"]="c7e532bc7f2e6e1f27c9087172a95faf3b85672256775fde3e8cf26d9934f4fe"
 )
 
 # Env vars passed through to the inside of the docker container and into
@@ -58,11 +58,13 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_BASEDIRS
 	SCCACHE_IDLE_TIMEOUT
 	SCCACHE_IGNORE_SERVER_IO_ERROR
+	SCCACHE_CLIENT_SIDE
 	SCCACHE_WEBDAV_ENDPOINT
 	SCCACHE_WEBDAV_USERNAME
 	SCCACHE_WEBDAV_PASSWORD
 	SCCACHE_WEBDAV_TOKEN
 	SCCACHE_WEBDAV_KEY_PREFIX
+	SCCACHE_WEBDAV_RW_MODE
 	SCCACHE_REDIS
 	SCCACHE_REDIS_ENDPOINT
 	SCCACHE_REDIS_CLUSTER_ENDPOINTS
@@ -72,6 +74,7 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_REDIS_TTL
 	SCCACHE_REDIS_EXPIRATION
 	SCCACHE_REDIS_KEY_PREFIX
+	SCCACHE_REDIS_RW_MODE
 	SCCACHE_BUCKET
 	SCCACHE_REGION
 	SCCACHE_ENDPOINT
@@ -80,6 +83,9 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_S3_ENABLE_VIRTUAL_HOST_STYLE
 	SCCACHE_S3_NO_CREDENTIALS
 	SCCACHE_S3_SERVER_SIDE_ENCRYPTION
+	SCCACHE_S3_SERVER_SIDE_ENCRYPTION_AWS_KMS
+	SCCACHE_S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID
+	SCCACHE_S3_RW_MODE
 	AWS_ACCESS_KEY_ID
 	AWS_SECRET_ACCESS_KEY
 	AWS_SESSION_TOKEN
@@ -88,6 +94,7 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_GHA_CACHE_TO
 	SCCACHE_GHA_CACHE_FROM
 	SCCACHE_GHA_RUNTIME_TOKEN
+	SCCACHE_GHA_RW_MODE
 	ACTIONS_CACHE_URL
 	ACTIONS_RESULTS_URL
 	ACTIONS_RUNTIME_TOKEN
