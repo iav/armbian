@@ -157,7 +157,7 @@ overage after late 2025.
 
 ## DNS-SD discovery
 
-Unlike `ccache-remote`, sccache (as of v0.15) has no built-in
+Unlike `ccache-remote`, sccache (as of v0.18) has no built-in
 auto-discovery for its WebDAV / S3 / Redis endpoints. If you want to
 advertise yours over Avahi anyway (so other tools can find it), `cp` an
 appropriate `.service` file from the ccache-remote extension's `misc/`
