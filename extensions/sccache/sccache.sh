@@ -56,6 +56,7 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_DIR
 	SCCACHE_CACHE_SIZE
 	SCCACHE_BASEDIRS
+	SCCACHE_DIRECT
 	SCCACHE_IDLE_TIMEOUT
 	SCCACHE_IGNORE_SERVER_IO_ERROR
 	SCCACHE_CLIENT_SIDE
@@ -318,6 +319,13 @@ function compile_prepare_vars__sccache() {
 		[[ -n "${!var}" ]] && export "${var?}"
 	done
 
+	# sccache 0.18 with basedirs and the preprocessor cache can hand out an
+	# object built against another checkout's headers (mozilla/sccache#2863).
+	if [[ -n "${SCCACHE_BASEDIRS}" && -z "${SCCACHE_DIRECT}" ]]; then
+		export SCCACHE_DIRECT=false
+		display_alert "${EXTENSION}: SCCACHE_BASEDIRS set" "preprocessor cache off (SCCACHE_DIRECT=false), see mozilla/sccache#2863" "wrn"
+	fi
+
 	# Default to a local-FS backend rooted in the project cache when the
 	# user hasn't selected any remote backend. Mirrors ccache's
 	# ${SRC}/cache/ccache default — keeps the cache on the same volume as
@@ -506,14 +514,15 @@ function custom_kernel_make_params__sccache_wrap_rustc() {
 # docker.sh forwards a fixed set, but SCCACHE_* is not in that whitelist.
 function host_pre_docker_launch__sccache() {
 	# Rewrite loopback host references (localhost / 127.0.0.1 / ::1) in the
-	# single-URL endpoint vars to host.docker.internal so a cache service
-	# bound to the build host's loopback is reachable from inside the
-	# container. Mirrors ccache-remote's docker handling.
+	# endpoint vars to host.docker.internal so a cache service bound to the
+	# build host's loopback is reachable from inside the container. Mirrors
+	# ccache-remote's docker handling.
 	local _rewrote_loopback=0
 	_ext_sccache_rewrite_loopback SCCACHE_WEBDAV_ENDPOINT && _rewrote_loopback=1
 	_ext_sccache_rewrite_loopback SCCACHE_ENDPOINT && _rewrote_loopback=1
 	_ext_sccache_rewrite_loopback SCCACHE_REDIS && _rewrote_loopback=1
 	_ext_sccache_rewrite_loopback SCCACHE_REDIS_ENDPOINT && _rewrote_loopback=1
+	_ext_sccache_rewrite_loopback SCCACHE_REDIS_CLUSTER_ENDPOINTS && _rewrote_loopback=1
 	if ((_rewrote_loopback)); then
 		DOCKER_EXTRA_ARGS+=("--add-host=host.docker.internal:host-gateway")
 	fi
@@ -544,13 +553,41 @@ function host_pre_docker_launch__sccache() {
 	done < <(compgen -v SCCACHE_SHA256_ 2> /dev/null || true)
 }
 
-# Rewrite the host part of an URL-valued env var from loopback
-# (localhost / 127.0.0.1 / [::1]) to host.docker.internal so a cache
-# service bound to the build host's loopback is reachable from the
-# container. Returns 0 if the var was rewritten, 1 otherwise.
+# Point loopback hosts in an endpoint var (a comma-separated list for
+# SCCACHE_REDIS_CLUSTER_ENDPOINTS) at host.docker.internal, so a cache on the
+# build host's loopback is reachable from the container. Returns 0 if changed.
 function _ext_sccache_rewrite_loopback() {
-	local var="$1" url="${!1:-}"
-	[[ -z "${url}" ]] && return 1
+	local var="$1" value="${!1:-}"
+	[[ -z "${value}" ]] && return 1
+
+	local -a items
+	local i new_item new changed=0
+	IFS=',' read -r -a items <<< "${value}"
+	for i in "${!items[@]}"; do
+		if new_item="$(_ext_sccache_loopback_url "${items[i]}")"; then
+			items[i]="${new_item}"
+			changed=1
+		fi
+	done
+	((changed)) || return 1
+
+	new="$(
+		IFS=','
+		echo "${items[*]}"
+	)"
+	export "${var?}=${new}"
+	# A KEY=value CLI argument is relaunched as is and would override the export inside the container.
+	if [[ -v "ARMBIAN_CLI_RELAUNCH_PARAMS[${var}]" ]]; then
+		ARMBIAN_CLI_RELAUNCH_PARAMS["${var}"]="${new}"
+	fi
+	display_alert "${EXTENSION}: rewrote loopback for docker" "${var} → host.docker.internal" "debug"
+	return 0
+}
+
+# Print the URL with its loopback host replaced by host.docker.internal;
+# return 1 if the host is not loopback.
+function _ext_sccache_loopback_url() {
+	local url="$1"
 
 	# Decompose: [scheme://][userinfo@]host[:port][/path]; Redis also takes a bare host:port.
 	local scheme="" rest="${url}"
@@ -585,14 +622,7 @@ function _ext_sccache_rewrite_loopback() {
 			# Splice host only; preserve userinfo/port/path verbatim so a
 			# credential value containing "localhost" or "127.0.0.1" as a
 			# substring isn't silently mutated.
-			local new="${scheme:+${scheme}://}${userinfo}host.docker.internal${port_path}"
-			export "${var?}=${new}"
-			# A KEY=value CLI argument is relaunched as is and would override the export inside the container.
-			if [[ -v "ARMBIAN_CLI_RELAUNCH_PARAMS[${var}]" ]]; then
-				ARMBIAN_CLI_RELAUNCH_PARAMS["${var}"]="${new}"
-			fi
-			display_alert "${EXTENSION}: rewrote loopback for docker" \
-				"${var}: ${host} → host.docker.internal" "debug"
+			echo "${scheme:+${scheme}://}${userinfo}host.docker.internal${port_path}"
 			return 0
 			;;
 		*) return 1 ;;

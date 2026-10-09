@@ -116,21 +116,18 @@ isn't capped by RAM:
 Point sccache at the server:
 
 ```bash
+SCCACHE_REDIS_PASSWORD="<password>" \
 ./compile.sh ENABLE_EXTENSIONS=sccache \
-             SCCACHE_REDIS="redis://:<password>@<server>:6666" \
+             SCCACHE_REDIS_ENDPOINT="redis://<server>:6666" \
              BOARD=... BRANCH=... RELEASE=...
 ```
 
-URL form is `redis://[username:password@]host[:port][/db]`. For
-unauthenticated LAN deployments drop the credentials prefix:
-`SCCACHE_REDIS="redis://<server>:6666"`. Alternatively split the
-password out to keep it off the command line and out of the URL:
-
-```bash
-SCCACHE_REDIS="redis://<server>:6666" \
-SCCACHE_REDIS_PASSWORD="<password>" \
-ENABLE_EXTENSIONS=sccache ./compile.sh BOARD=...
-```
+The password stays in the environment, off the command line and out of
+the URL; unauthenticated LAN deployments drop it, and a user name goes
+in `SCCACHE_REDIS_USERNAME`. A cluster takes a comma-separated
+`SCCACHE_REDIS_CLUSTER_ENDPOINTS` instead. The older `SCCACHE_REDIS`
+(credentials inside its URL) is deprecated upstream and ignores
+`SCCACHE_REDIS_PASSWORD`.
 
 `SCCACHE_REDIS_KEY_PREFIX="armbian/"` namespaces keys when sharing a
 KvRocks instance with other tools. `SCCACHE_REDIS_TTL=<seconds>` adds
