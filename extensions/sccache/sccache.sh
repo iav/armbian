@@ -103,6 +103,15 @@ declare -g -a SCCACHE_PASSTHROUGH_VARS=(
 	SCCACHE_LOG
 )
 
+# Endpoint vars whose loopback host must become host.docker.internal in Docker.
+declare -g -a __ext_sccache_endpoint_vars=(
+	SCCACHE_WEBDAV_ENDPOINT
+	SCCACHE_ENDPOINT
+	SCCACHE_REDIS
+	SCCACHE_REDIS_ENDPOINT
+	SCCACHE_REDIS_CLUSTER_ENDPOINTS
+)
+
 function extension_prepare_config__sccache() {
 	# Warn (don't abort) when env points sccache at more than one remote
 	# backend. sccache itself resolves precedence (S3 > Redis > Memcached >
@@ -122,10 +131,10 @@ function extension_prepare_config__sccache() {
 }
 
 # Download + verify the pinned sccache binary into cache/tools/sccache/,
-# and overlay it with a thin shim — both named "sccache". The shim lives
-# in ${tools_dir} (added to PATH); the real binary stays in ${bin_dir}
-# under its versioned subdir and is referenced from the shim by absolute
-# path. Idempotent: fast path skips when both files are in place.
+# and overlay it with a thin shim — both named "sccache". The real binary
+# stays in the versioned ${bin_dir}; the shim lives in ${bin_dir}/shim (added
+# to PATH) and references it by absolute path. Idempotent: fast path skips
+# when both files are in place.
 #
 # Naming: the shim's filename MUST be "sccache" (not "sccache-wrap" or
 # similar). The u-boot top-level Makefile parses CROSS_COMPILE with a
@@ -145,11 +154,13 @@ function _ext_sccache_bootstrap_binary() {
 	local tools_dir="${SRC}/cache/tools/sccache"
 	local bin_dir="${tools_dir}/sccache-${ver}-${triple}"
 	local real="${bin_dir}/sccache"
-	local shim="${tools_dir}/sccache"
+	# Per version, so concurrent builds on different pins keep their own shim.
+	local shim_dir="${bin_dir}/shim"
+	local shim="${shim_dir}/sccache"
 
-	declare -g __ext_sccache_bin_dir="${tools_dir}"
+	declare -g __ext_sccache_bin_dir="${shim_dir}"
 
-	mkdir -p "${tools_dir}"
+	mkdir -p "${tools_dir}" "${shim_dir}"
 	_ext_sccache_write_cachedir_tag "${tools_dir}"
 
 	# Fast path: both files present and shim still references this real binary.
@@ -319,6 +330,14 @@ function compile_prepare_vars__sccache() {
 		[[ -n "${!var}" ]] && export "${var?}"
 	done
 
+	# The container applies config and CLI values again, so loopback endpoints
+	# are rewritten here; the host hook only adds the host-gateway mapping.
+	if [[ "${ARMBIAN_RUNNING_IN_CONTAINER}" == "yes" ]]; then
+		for var in "${__ext_sccache_endpoint_vars[@]}"; do
+			_ext_sccache_rewrite_loopback "${var}" || true
+		done
+	fi
+
 	# sccache 0.18 with basedirs and the preprocessor cache can hand out an
 	# object built against another checkout's headers (mozilla/sccache#2863).
 	if [[ -n "${SCCACHE_BASEDIRS}" && -z "${SCCACHE_DIRECT}" ]]; then
@@ -330,12 +349,7 @@ function compile_prepare_vars__sccache() {
 	# user hasn't selected any remote backend. Mirrors ccache's
 	# ${SRC}/cache/ccache default — keeps the cache on the same volume as
 	# the build tree (XFS-friendly on cloud builders).
-	if [[ -z "${SCCACHE_DIR}" &&
-		-z "${SCCACHE_BUCKET}" &&
-		-z "${SCCACHE_WEBDAV_ENDPOINT}" &&
-		-z "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" &&
-		"${SCCACHE_GHA_ENABLED}" != "on" &&
-		"${SCCACHE_GHA_ENABLED}" != "true" ]]; then
+	if [[ -z "${SCCACHE_DIR}" ]] && ! _ext_sccache_remote_configured; then
 		export SCCACHE_DIR="${COMPILE_CACHE_DIR:-${SRC}/cache/sccache}"
 	fi
 	# Backend-specific overrides backend-agnostic; agnostic overrides built-in
@@ -348,6 +362,7 @@ function compile_prepare_vars__sccache() {
 		export SCCACHE_DIR
 		_ext_sccache_write_cachedir_tag "${SCCACHE_DIR}"
 	fi
+	_ext_sccache_remote_configured || _ext_sccache_lock_local_cache
 
 	# Force a fresh daemon so it boots with the env we just exported. A
 	# stale server from a previous build (different SCCACHE_DIR / backend /
@@ -375,6 +390,29 @@ function _ext_sccache_stop_server() {
 	sccache --stop-server > /dev/null 2>&1 || true
 }
 
+function _ext_sccache_remote_configured() {
+	[[ -n "${SCCACHE_BUCKET}${SCCACHE_WEBDAV_ENDPOINT}" ||
+		-n "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" ||
+		"${SCCACHE_GHA_ENABLED}" == "on" || "${SCCACHE_GHA_ENABLED}" == "true" ]]
+}
+
+# sccache supports one server per local cache dir (docs/Local.md); concurrent
+# builds on one host would race on it, so the later one waits. Held until exit.
+function _ext_sccache_lock_local_cache() {
+	[[ -n "${__ext_sccache_lock_fd:-}" ]] && return 0
+	mkdir -p "${SCCACHE_DIR}"
+	exec {__ext_sccache_lock_fd}> "${SCCACHE_DIR}/.armbian-build.lock" ||
+		exit_with_error "${EXTENSION}: cannot open lock file" "${SCCACHE_DIR}/.armbian-build.lock"
+	flock -n "${__ext_sccache_lock_fd}" && return 0
+
+	display_alert "${EXTENSION}: local cache in use by another build" "waiting for ${SCCACHE_DIR}; a remote backend allows parallel builds" "wrn"
+	local -i since=${SECONDS}
+	until flock -w 60 "${__ext_sccache_lock_fd}"; do
+		display_alert "${EXTENSION}: still waiting for the local cache" "$((SECONDS - since))s; Ctrl+C to abort" "info"
+	done
+	display_alert "${EXTENSION}: local cache lock obtained" "after $((SECONDS - since))s" "info"
+}
+
 # Compile a one-statement C file through sccache, then read its stats.
 # If the trivial compile exits non-zero, or sccache reports any cache /
 # write errors, treat the remote backend as broken and disable it for
@@ -384,13 +422,7 @@ function _ext_sccache_stop_server() {
 # pure local-FS configurations (nothing to fall back from).
 function _ext_sccache_probe_backend() {
 	# Only probe when a remote backend is actually configured.
-	if [[ -z "${SCCACHE_WEBDAV_ENDPOINT}" &&
-		-z "${SCCACHE_BUCKET}" &&
-		-z "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" &&
-		"${SCCACHE_GHA_ENABLED}" != "on" &&
-		"${SCCACHE_GHA_ENABLED}" != "true" ]]; then
-		return 0
-	fi
+	_ext_sccache_remote_configured || return 0
 
 	# Skip the host-cc wrappers in front of PATH: they would call sccache again.
 	local cc probe_path="${PATH//"${__ext_sccache_bin_dir}:"/}"
@@ -450,6 +482,7 @@ function _ext_sccache_disable_remote() {
 	export SCCACHE_DIR="${COMPILE_CACHE_DIR:-${SRC}/cache/sccache}"
 	_ext_sccache_write_cachedir_tag "${SCCACHE_DIR}"
 	sccache --stop-server > /dev/null 2>&1 || true
+	_ext_sccache_lock_local_cache
 }
 
 # Inject every set SCCACHE_PASSTHROUGH_VARS entry into the given env-i
@@ -513,19 +546,27 @@ function custom_kernel_make_params__sccache_wrap_rustc() {
 # Pass the SCCACHE_* vars across the host→docker boundary. core's main
 # docker.sh forwards a fixed set, but SCCACHE_* is not in that whitelist.
 function host_pre_docker_launch__sccache() {
-	# Rewrite loopback host references (localhost / 127.0.0.1 / ::1) in the
-	# endpoint vars to host.docker.internal so a cache service bound to the
-	# build host's loopback is reachable from inside the container. Mirrors
-	# ccache-remote's docker handling.
-	local _rewrote_loopback=0
-	_ext_sccache_rewrite_loopback SCCACHE_WEBDAV_ENDPOINT && _rewrote_loopback=1
-	_ext_sccache_rewrite_loopback SCCACHE_ENDPOINT && _rewrote_loopback=1
-	_ext_sccache_rewrite_loopback SCCACHE_REDIS && _rewrote_loopback=1
-	_ext_sccache_rewrite_loopback SCCACHE_REDIS_ENDPOINT && _rewrote_loopback=1
-	_ext_sccache_rewrite_loopback SCCACHE_REDIS_CLUSTER_ENDPOINTS && _rewrote_loopback=1
-	if ((_rewrote_loopback)); then
-		DOCKER_EXTRA_ARGS+=("--add-host=host.docker.internal:host-gateway")
-	fi
+	# A cache service on the build host's loopback is reached from the container
+	# as host.docker.internal: map that name here, compile_prepare_vars rewrites
+	# the endpoints inside. Mirrors ccache-remote's docker handling.
+	local var item
+	for var in "${__ext_sccache_endpoint_vars[@]}"; do
+		for item in ${!var//,/ }; do
+			if _ext_sccache_loopback_url "${item}" > /dev/null; then
+				DOCKER_EXTRA_ARGS+=("--add-host=host.docker.internal:host-gateway")
+				break 2
+			fi
+		done
+	done
+
+	# A user-chosen cache dir is a host path; the container sees only ${SRC}
+	# mounts, so bind it at the same path.
+	for var in SCCACHE_DIR COMPILE_CACHE_DIR; do
+		if [[ -n "${!var}" ]]; then
+			mkdir -p "${!var}"
+			DOCKER_EXTRA_ARGS+=("--mount" "type=bind,source=${!var},target=${!var}")
+		fi
+	done
 
 	# Pass envs by name (--env VAR with no value) rather than VAR=VAL so
 	# that AWS_SECRET_ACCESS_KEY / SCCACHE_WEBDAV_PASSWORD /
@@ -533,7 +574,6 @@ function host_pre_docker_launch__sccache() {
 	# docker_cli_prepare_launch's debug dump of DOCKER_EXTRA_ARGS.
 	# Docker resolves the value from the launcher's exported env, so we
 	# export each var first.
-	local var
 	for var in "${SCCACHE_PASSTHROUGH_VARS[@]}" SCCACHE_PIN_VERSION; do
 		if [[ -n "${!var}" ]]; then
 			export "${var?}"
@@ -576,10 +616,6 @@ function _ext_sccache_rewrite_loopback() {
 		echo "${items[*]}"
 	)"
 	export "${var?}=${new}"
-	# A KEY=value CLI argument is relaunched as is and would override the export inside the container.
-	if [[ -v "ARMBIAN_CLI_RELAUNCH_PARAMS[${var}]" ]]; then
-		ARMBIAN_CLI_RELAUNCH_PARAMS["${var}"]="${new}"
-	fi
 	display_alert "${EXTENSION}: rewrote loopback for docker" "${var} → host.docker.internal" "debug"
 	return 0
 }
