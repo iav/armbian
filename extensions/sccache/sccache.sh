@@ -611,7 +611,19 @@ function compile_wrapper_pre__sccache() {
 		display_alert "sccache version" "$(sccache --version 2> /dev/null || echo unknown)" "sccache"
 	fi
 
-	display_alert "Running sccache'd build..." "sccache" "sccache"
+	display_alert "Running sccache'd build..." "$(_ext_sccache_backend_location "$(sccache --show-stats --stats-format=json 2> /dev/null)")" "sccache"
+}
+
+# The storage sccache actually picked (env may name several backends), from
+# the cache_location of its JSON stats, with URL credentials masked.
+function _ext_sccache_backend_location() {
+	local location
+	location="$(echo "$1" | jq -r '.cache_location // empty' 2> /dev/null)"
+	_ext_sccache_mask_credentials "${location:-unknown backend}"
+}
+
+function _ext_sccache_mask_credentials() {
+	echo "$1" | sed -E 's#(://)[^/@[:space:]]+@#\1***@#g'
 }
 
 function compile_wrapper_post__sccache() {
@@ -641,7 +653,7 @@ function compile_wrapper_post__sccache() {
 	fi
 
 	pct="$(_ext_sccache_hit_pct "${hits}" "${misses}")"
-	display_alert "Sccache result" "hit=${hits} miss=${misses} err=${errors} (${pct}%)" "info"
+	display_alert "Sccache result" "hit=${hits} miss=${misses} err=${errors} (${pct}%) — $(_ext_sccache_backend_location "${stats_json}")" "info"
 
 	# Per-language breakdown (when jq is available) — surfaces Rust vs
 	# C/C++ vs Assembler hit ratios and exposes which compilers
@@ -665,7 +677,7 @@ function compile_wrapper_post__sccache() {
 		while IFS= read -r line; do
 			[[ -z "${line}" ]] && continue
 			display_alert "  ${line}" "" "info"
-		done <<< "${stats_txt}"
+		done <<< "$(_ext_sccache_mask_credentials "${stats_txt}")"
 	fi
 }
 
