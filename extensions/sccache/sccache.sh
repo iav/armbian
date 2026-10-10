@@ -45,9 +45,9 @@ declare -g -A __ext_sccache_sha256=(
 	["s390x-unknown-linux-musl"]="c7e532bc7f2e6e1f27c9087172a95faf3b85672256775fde3e8cf26d9934f4fe"
 )
 
-# Prefixes of what sccache reads (docs/Configuration.md): its own settings, the
-# S3, Azure, OSS and COS credentials, and the GitHub Actions cache runtime.
-declare -g -a __ext_sccache_env_prefixes=(SCCACHE_ AWS_ ACTIONS_ AZURE_ ALIBABA_CLOUD_ TENCENTCLOUD_)
+# Prefixes of what sccache reads (docs/Configuration.md, docs/Gcs.md): its own
+# settings, the S3, GCS, Azure, OSS and COS credentials, and the GitHub Actions cache runtime.
+declare -g -a __ext_sccache_env_prefixes=(SCCACHE_ AWS_ GOOGLE_ ACTIONS_ AZURE_ ALIBABA_CLOUD_ TENCENTCLOUD_)
 
 function _ext_sccache_env_vars() {
 	local prefix var
