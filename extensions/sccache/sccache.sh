@@ -48,63 +48,27 @@ declare -g -A __ext_sccache_sha256=(
 	["s390x-unknown-linux-musl"]="c7e532bc7f2e6e1f27c9087172a95faf3b85672256775fde3e8cf26d9934f4fe"
 )
 
-# Env vars passed through to the inside of the docker container and into
-# the `env -i make` arrays for kernel/u-boot. Mirrors the role of
-# CCACHE_PASSTHROUGH_VARS in extensions/ccache-remote. Any SCCACHE_*
-# variable set at compile.sh invocation time is forwarded.
-declare -g -a SCCACHE_PASSTHROUGH_VARS=(
-	SCCACHE_DIR
-	SCCACHE_CACHE_SIZE
-	SCCACHE_BASEDIRS
-	SCCACHE_DIRECT
-	SCCACHE_IDLE_TIMEOUT
-	SCCACHE_SERVER_PORT
-	SCCACHE_SERVER_UDS
-	SCCACHE_IGNORE_SERVER_IO_ERROR
-	SCCACHE_CLIENT_SIDE
-	SCCACHE_WEBDAV_ENDPOINT
-	SCCACHE_WEBDAV_USERNAME
-	SCCACHE_WEBDAV_PASSWORD
-	SCCACHE_WEBDAV_TOKEN
-	SCCACHE_WEBDAV_KEY_PREFIX
-	SCCACHE_WEBDAV_RW_MODE
-	SCCACHE_REDIS
-	SCCACHE_REDIS_ENDPOINT
-	SCCACHE_REDIS_CLUSTER_ENDPOINTS
-	SCCACHE_REDIS_USERNAME
-	SCCACHE_REDIS_PASSWORD
-	SCCACHE_REDIS_DB
-	SCCACHE_REDIS_TTL
-	SCCACHE_REDIS_EXPIRATION
-	SCCACHE_REDIS_KEY_PREFIX
-	SCCACHE_REDIS_RW_MODE
-	SCCACHE_BUCKET
-	SCCACHE_REGION
-	SCCACHE_ENDPOINT
-	SCCACHE_S3_USE_SSL
-	SCCACHE_S3_KEY_PREFIX
-	SCCACHE_S3_ENABLE_VIRTUAL_HOST_STYLE
-	SCCACHE_S3_NO_CREDENTIALS
-	SCCACHE_S3_SERVER_SIDE_ENCRYPTION
-	SCCACHE_S3_SERVER_SIDE_ENCRYPTION_AWS_KMS
-	SCCACHE_S3_SERVER_SIDE_ENCRYPTION_KMS_KEY_ID
-	SCCACHE_S3_RW_MODE
+# Variables sccache reads without the SCCACHE_ prefix: S3 credentials and
+# the GitHub Actions cache runtime.
+declare -g -a __ext_sccache_unprefixed_vars=(
 	AWS_ACCESS_KEY_ID
 	AWS_SECRET_ACCESS_KEY
 	AWS_SESSION_TOKEN
-	SCCACHE_GHA_ENABLED
-	SCCACHE_GHA_VERSION
-	SCCACHE_GHA_CACHE_URL
-	SCCACHE_GHA_CACHE_TO
-	SCCACHE_GHA_CACHE_FROM
-	SCCACHE_GHA_RUNTIME_TOKEN
-	SCCACHE_GHA_RW_MODE
 	ACTIONS_CACHE_URL
 	ACTIONS_RESULTS_URL
 	ACTIONS_RUNTIME_TOKEN
-	SCCACHE_ERROR_LOG
-	SCCACHE_LOG
 )
+
+# Every SCCACHE_* but our own settings, so new sccache options need no edit here.
+function _ext_sccache_passthrough_vars() {
+	local var
+	for var in $(compgen -v SCCACHE_) "${__ext_sccache_unprefixed_vars[@]}"; do
+		case "${var}" in
+			SCCACHE_PIN_VERSION | SCCACHE_SKIP_PROBE) ;;
+			*) echo "${var}" ;;
+		esac
+	done
+}
 
 # Endpoint vars whose loopback host must become host.docker.internal in Docker.
 declare -g -a __ext_sccache_endpoint_vars=(
@@ -124,7 +88,7 @@ function extension_prepare_config__sccache() {
 	[[ -n "${SCCACHE_BUCKET}" ]] && ((backends_set++)) || true
 	[[ -n "${SCCACHE_WEBDAV_ENDPOINT}" ]] && ((backends_set++)) || true
 	[[ -n "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" ]] && ((backends_set++)) || true
-	[[ -n "${SCCACHE_GHA_VERSION}" || "${SCCACHE_GHA_ENABLED}" == "on" || "${SCCACHE_GHA_ENABLED}" == "true" ]] && ((backends_set++)) || true
+	_ext_sccache_gha_configured && ((backends_set++)) || true
 	if ((backends_set > 1)); then
 		display_alert "${EXTENSION}: multiple remote backends configured" \
 			"sccache will pick by built-in precedence (S3 > Redis > GHA > WebDAV)" "wrn"
@@ -336,7 +300,7 @@ function compile_prepare_vars__sccache() {
 	# never see them. Promote every configured backend var to an export now
 	# so probe and host-shell builds see the same config as the docker side.
 	local var
-	for var in "${SCCACHE_PASSTHROUGH_VARS[@]}"; do
+	for var in $(_ext_sccache_passthrough_vars); do
 		[[ -n "${!var}" ]] && export "${var?}"
 	done
 
@@ -400,10 +364,18 @@ function _ext_sccache_stop_server() {
 	sccache --stop-server > /dev/null 2>&1 || true
 }
 
+# Same true values as sccache's bool_from_env_var.
+function _ext_sccache_gha_configured() {
+	[[ -n "${SCCACHE_GHA_VERSION}" ]] && return 0
+	case "${SCCACHE_GHA_ENABLED,,}" in
+		true | on | 1) return 0 ;;
+	esac
+	return 1
+}
+
 function _ext_sccache_remote_configured() {
 	[[ -n "${SCCACHE_BUCKET}${SCCACHE_WEBDAV_ENDPOINT}" ||
-		-n "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" ||
-		-n "${SCCACHE_GHA_VERSION}" || "${SCCACHE_GHA_ENABLED}" == "on" || "${SCCACHE_GHA_ENABLED}" == "true" ]]
+		-n "${SCCACHE_REDIS}${SCCACHE_REDIS_ENDPOINT}${SCCACHE_REDIS_CLUSTER_ENDPOINTS}" ]] || _ext_sccache_gha_configured
 }
 
 # sccache supports one server per local cache dir (docs/Local.md); concurrent
@@ -495,7 +467,7 @@ function _ext_sccache_disable_remote() {
 	_ext_sccache_lock_local_cache
 }
 
-# Inject every set SCCACHE_PASSTHROUGH_VARS entry into the given env-i
+# Inject every set _ext_sccache_passthrough_vars entry into the given env-i
 # make envs array, except credential-bearing variables. sccache daemon
 # was spawned in compile_prepare_vars with the full env (secrets baked
 # in); env-i make children just talk to the running daemon over its
@@ -507,7 +479,7 @@ function _ext_sccache_disable_remote() {
 function _ext_sccache_inject_envs() {
 	local -n envs="$1"
 	local var val
-	for var in "${SCCACHE_PASSTHROUGH_VARS[@]}"; do
+	for var in $(_ext_sccache_passthrough_vars); do
 		case "${var}" in
 			*PASSWORD* | *TOKEN* | *SECRET*) continue ;;
 		esac
@@ -539,13 +511,12 @@ function uboot_make_config__sccache() { _ext_sccache_inject_envs uboot_make_envs
 function custom_kernel_make_params__sccache_wrap_rustc() {
 	if [[ -n "${RUST_TOOL_RUSTC:-}" && -n "${__ext_sccache_bin_dir:-}" ]]; then
 		local wrap="${__ext_sccache_bin_dir}/sccache-rustc"
-		cat > "${wrap}" <<- SCCACHE_RUSTC_WRAP
+		_ext_sccache_install_script "${wrap}" <<- SCCACHE_RUSTC_WRAP
 			#!/bin/sh
 			# Auto-generated by extensions/sccache.sh — points RUSTC at a
 			# single-file path so kbuild's command -v check passes.
 			exec "${__ext_sccache_bin_dir}/sccache" "${RUST_TOOL_RUSTC}" "\$@"
 		SCCACHE_RUSTC_WRAP
-		chmod +x "${wrap}"
 		common_make_params_quoted+=("RUSTC=${wrap}")
 	fi
 }
@@ -588,7 +559,7 @@ function host_pre_docker_launch__sccache() {
 	# docker_cli_prepare_launch's debug dump of DOCKER_EXTRA_ARGS.
 	# Docker resolves the value from the launcher's exported env, so we
 	# export each var first.
-	for var in "${SCCACHE_PASSTHROUGH_VARS[@]}" SCCACHE_PIN_VERSION; do
+	for var in $(_ext_sccache_passthrough_vars) SCCACHE_PIN_VERSION; do
 		if [[ -n "${!var}" ]]; then
 			export "${var?}"
 			DOCKER_EXTRA_ARGS+=("--env" "${var}")
