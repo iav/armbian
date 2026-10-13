@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @description Makes kdump work out of the box: builds the kernel with kexec and crash dump support, installs `kdump-tools`, `kexec-tools` and `makedumpfile`, reserves memory with `crashkernel=` in `armbianEnv.txt` and configures kdump-tools so a panic leaves a compressed vmcore in `/var/crash`. Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
+# @description Makes kdump work out of the box: builds the kernel with kexec and crash dump support, installs `kdump-tools`, `kexec-tools` and `makedumpfile`, reserves memory with `crashkernel=` in `armbianEnv.txt` and configures kdump-tools so a panic leaves a compressed vmcore in `/var/crash`; keeps the kernel log of a panic, and the console output before a watchdog reset, in RAM (ramoops). Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
 
 #
 # SPDX-License-Identifier: GPL-2.0
@@ -11,14 +11,21 @@
 # Variables:
 #   KDUMP_CRASHKERNEL   Memory to reserve for the crash kernel, in kernel
 #                       crashkernel= syntax. Default: 1G-2G:256M,2G-:512M
+#   KDUMP_RAMOOPS       yes: keep the kernel log in 2 MiB of RAM reserved with
+#                       reserve_mem=, see /var/lib/systemd/pstore after the
+#                       next boot. Default: yes
 #
-# Only boards that boot through armbianEnv.txt get crashkernel= automatically;
-# elsewhere add it to the kernel command line by hand.
+# Only boards that boot through armbianEnv.txt get crashkernel= and the ramoops
+# arguments automatically; elsewhere add them to the kernel command line by hand.
+#
+# ramoops keeps the whole kernel log on a panic or an oops. Without one, as
+# when the watchdog resets a hung board, only the console record survives, and
+# it holds just what passes the console loglevel: next to nothing at loglevel=1.
 #
 # The crash kernel command line is built on the board each time kdump-tools
 # loads it: the running command line without what a crash kernel must not
-# repeat (crashkernel=, kgdboc=, splash, display consoles), plus a single CPU,
-# a serial earlycon and no CMA.
+# repeat (crashkernel=, ramoops, kgdboc=, splash, display consoles), plus a
+# single CPU, a serial earlycon and no CMA.
 #
 # Limits:
 # - On boards whose PMIC sits behind a slow bus (RK8xx over I2C) the panicking
@@ -35,30 +42,40 @@ function extension_prepare_config__kdump() {
 	if [[ -z "${KDUMP_CRASHKERNEL}" || "${KDUMP_CRASHKERNEL}" =~ [[:space:]] ]]; then
 		exit_with_error "${EXTENSION}: KDUMP_CRASHKERNEL must be a single crashkernel= value" "'${KDUMP_CRASHKERNEL}'"
 	fi
+	declare -g KDUMP_RAMOOPS="${KDUMP_RAMOOPS:-yes}"
+	declare -g KDUMP_KERNEL_ARGS="crashkernel=${KDUMP_CRASHKERNEL}"
+	case "${KDUMP_RAMOOPS}" in
+		yes) KDUMP_KERNEL_ARGS+=" reserve_mem=2M:4096:ramoops ramoops.mem_name=ramoops ramoops.console_size=1048576 ramoops.record_size=131072" ;;
+		no) ;;
+		*) exit_with_error "${EXTENSION}: KDUMP_RAMOOPS must be yes or no" "'${KDUMP_RAMOOPS}'" ;;
+	esac
 	if [[ "${SRC_EXTLINUX}" == "yes" ]]; then
-		display_alert "${EXTENSION}: extlinux boot" "add crashkernel=${KDUMP_CRASHKERNEL} to the kernel command line by hand" "wrn"
+		display_alert "${EXTENSION}: extlinux boot" "add '${KDUMP_KERNEL_ARGS}' to the kernel command line by hand" "wrn"
 	fi
 	add_packages_to_image kdump-tools kexec-tools makedumpfile
 	if [[ "${LINUXFAMILY}" == "meson64" ]]; then
 		add_packages_to_image device-tree-compiler # fdtput for the SM1 crash device tree
 	fi
-	display_alert "${EXTENSION}: crash kernel reservation" "crashkernel=${KDUMP_CRASHKERNEL}" "info"
+	display_alert "${EXTENSION}: kernel command line" "${KDUMP_KERNEL_ARGS}" "info"
 }
 
 function custom_kernel_config__kdump() {
 	# kexec-tools reads PHYS_OFFSET and _text from /proc/kcore and /proc/kallsyms
 	# to build the vmcore header.
 	opts_y+=("KEXEC" "KEXEC_FILE" "CRASH_DUMP" "PROC_VMCORE" "PROC_KCORE" "KALLSYMS_ALL")
-	display_alert "${EXTENSION}: kernel" "kexec, crash dump, /proc/vmcore" "info"
+	# Build these in whatever KDUMP_RAMOOPS says: the kernel artifact must not depend on
+	# it, and without a device tree node nothing loads a ramoops module.
+	opts_y+=("PSTORE" "PSTORE_RAM" "PSTORE_CONSOLE")
+	display_alert "${EXTENSION}: kernel" "kexec, crash dump, /proc/vmcore, ramoops" "info"
 }
 
-function image_specific_armbian_env_ready__kdump_crashkernel() {
+function image_specific_armbian_env_ready__kdump_kernel_args() {
 	declare env_file="${SDCARD}/boot/armbianEnv.txt"
 	# U-Boot keeps the last extraargs= line only, so extend the existing one.
 	if grep -q '^extraargs=' "${env_file}"; then
-		sed -i "s|^extraargs=.*|& crashkernel=${KDUMP_CRASHKERNEL}|" "${env_file}"
+		sed -i "s|^extraargs=.*|& ${KDUMP_KERNEL_ARGS}|" "${env_file}"
 	else
-		echo "extraargs=crashkernel=${KDUMP_CRASHKERNEL}" >> "${env_file}"
+		echo "extraargs=${KDUMP_KERNEL_ARGS}" >> "${env_file}"
 	fi
 	display_alert "${EXTENSION}: armbianEnv.txt" "$(grep '^extraargs=' "${env_file}")" "info"
 }
@@ -72,7 +89,7 @@ function post_customize_image__kdump_tools_config() {
 		# Print the running kernel command line without what a crash kernel must not repeat.
 		for arg in $(cat /proc/cmdline); do
 			case "${arg}" in
-				crashkernel=* | crash_kexec_post_notifiers | kgdboc=* | kgdbwait | memtest=* | splash | splash=* | quiet | console=tty[0-9]*) ;;
+				crashkernel=* | crash_kexec_post_notifiers | reserve_mem=* | ramoops.* | kgdboc=* | kgdbwait | memtest=* | splash | splash=* | quiet | console=tty[0-9]*) ;;
 				*) printf '%s ' "${arg}" ;;
 			esac
 		done
@@ -111,6 +128,16 @@ function post_customize_image__kdump_tools_config() {
 		[Service]
 		TimeoutStartSec=300
 	EOF
+
+	if [[ "${KDUMP_RAMOOPS}" == "yes" ]]; then
+		# systemd-pstore saves the console record under the same name every time;
+		# date the previous one so the next boot does not overwrite it.
+		mkdir -p "${SDCARD}/etc/systemd/system/systemd-pstore.service.d"
+		cat <<- 'EOF' > "${SDCARD}/etc/systemd/system/systemd-pstore.service.d/armbian-kdump.conf"
+			[Service]
+			ExecStartPre=/bin/sh -c 'for f in /var/lib/systemd/pstore/console-ramoops-[0-9]; do [ -f "$$f" ] && mv "$$f" "$$f.$$(date -r "$$f" +%%Y%%m%%d-%%H%%M%%S)"; done; true'
+		EOF
+	fi
 
 	chroot_sdcard systemctl enable kdump-tools.service
 }
