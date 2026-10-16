@@ -78,6 +78,8 @@ function custom_kernel_config__kdump() {
 	# kexec-tools reads PHYS_OFFSET and _text from /proc/kcore and /proc/kallsyms
 	# to build the vmcore header.
 	opts_y+=("KEXEC" "KEXEC_FILE" "CRASH_DUMP" "PROC_VMCORE" "PROC_KCORE" "KALLSYMS_ALL")
+	# kdump-config loads the running kernel as the crash kernel only if it is relocatable.
+	opts_y+=("RELOCATABLE")
 	# Build these in whatever KDUMP_RAMOOPS says: the kernel artifact must not depend on
 	# it, and without a device tree node nothing loads a ramoops module.
 	opts_y+=("PSTORE" "PSTORE_RAM" "PSTORE_CONSOLE")
