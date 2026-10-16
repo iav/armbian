@@ -36,13 +36,24 @@
 #   fires.
 # - makedumpfile from the distribution may not know a newer kernel; it still
 #   writes a dump, with a warning.
+# - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM, so
+#   kdump-tools loads no crash kernel on such a board.
+# - ramoops needs reserve_mem=, which Linux has from 6.11 on.
 
 function extension_prepare_config__kdump() {
+	case "${ARCH}" in
+		arm64 | armhf | amd64) ;;
+		*) exit_with_error "${EXTENSION}: Debian has no kdump-tools package for ${ARCH}" "${BOARD}" ;;
+	esac
 	declare -g KDUMP_CRASHKERNEL="${KDUMP_CRASHKERNEL:-1G-2G:256M,2G-:512M}"
 	if [[ -z "${KDUMP_CRASHKERNEL}" || "${KDUMP_CRASHKERNEL}" =~ [[:space:]] ]]; then
 		exit_with_error "${EXTENSION}: KDUMP_CRASHKERNEL must be a single crashkernel= value" "'${KDUMP_CRASHKERNEL}'"
 	fi
 	declare -g KDUMP_RAMOOPS="${KDUMP_RAMOOPS:-yes}"
+	if [[ "${KDUMP_RAMOOPS}" == "yes" ]] && ! linux-version compare "${KERNEL_MAJOR_MINOR}" ge 6.11; then
+		display_alert "${EXTENSION}: no ramoops" "kernel ${KERNEL_MAJOR_MINOR} has no reserve_mem=, it came in 6.11" "wrn"
+		KDUMP_RAMOOPS="no"
+	fi
 	declare -g KDUMP_KERNEL_ARGS="crashkernel=${KDUMP_CRASHKERNEL}"
 	case "${KDUMP_RAMOOPS}" in
 		yes) KDUMP_KERNEL_ARGS+=" reserve_mem=2M:4096:ramoops ramoops.mem_name=ramoops ramoops.console_size=1048576 ramoops.record_size=131072" ;;
@@ -109,17 +120,24 @@ function post_customize_image__kdump_tools_config() {
 	EOF
 	chmod 755 "${SDCARD}/usr/lib/armbian/kdump-cmdline" "${SDCARD}/usr/lib/armbian/kdump-kexec-args"
 
+	declare kdump_append="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 earlycon cma=0 loglevel=7 panic=10"
+	# Debian adds irqpoll everywhere except arm64. We leave out its usbcore.nousb:
+	# a crash kernel without USB cannot write the dump to a root file system on USB.
+	if [[ "${ARCH}" != "arm64" ]]; then
+		kdump_append+=" irqpoll"
+	fi
+
 	cat <<- 'EOF' >> "${SDCARD}/etc/default/kdump-tools"
 
 		# Armbian kdump extension
 		USE_KDUMP=1
 		KDUMP_COREDIR="/var/crash"
 		KDUMP_FAIL_CMD="reboot -f"
-		MAKEDUMP_ARGS="-d 31"
+		MAKEDUMP_ARGS="-c -d 31"
 		KDUMP_CMDLINE="$(/usr/lib/armbian/kdump-cmdline)"
-		KDUMP_CMDLINE_APPEND="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 earlycon cma=0 loglevel=7 panic=10"
 		KDUMP_KEXEC_ARGS="$(/usr/lib/armbian/kdump-kexec-args)"
 	EOF
+	echo "KDUMP_CMDLINE_APPEND=\"${kdump_append}\"" >> "${SDCARD}/etc/default/kdump-tools"
 
 	cat <<- 'EOF' > "${SDCARD}/etc/systemd/system/kdump-tools-dump.service.d/armbian.conf"
 		[Unit]
