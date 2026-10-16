@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @description Makes kdump work out of the box: builds the kernel with kexec and crash dump support, installs `kdump-tools`, `kexec-tools` and `makedumpfile`, reserves memory with `crashkernel=` in `armbianEnv.txt` and configures kdump-tools so a panic leaves a compressed vmcore in `/var/crash`; keeps the console output before a watchdog reset in RAM (ramoops), while the log of a panic goes into the dump. Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
+# @description Makes kdump work out of the box. Builds the kernel with kexec and crash dump support. Installs `kdump-tools`, `kexec-tools` and `makedumpfile`. Reserves memory with `crashkernel=` in `armbianEnv.txt`. Configures kdump-tools to save a compressed vmcore in `/var/crash` on a panic. Keeps the console output before a watchdog reset in RAM (ramoops). The panic log goes into the dump. Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
 
 #
 # SPDX-License-Identifier: GPL-2.0
@@ -11,37 +11,37 @@
 # Variables:
 #   KDUMP_CRASHKERNEL   Memory to reserve for the crash kernel, in kernel
 #                       crashkernel= syntax. Default: 1G-2G:256M,2G-:512M
-#   KDUMP_RAMOOPS       yes: keep the kernel log in 2 MiB of RAM reserved with
-#                       reserve_mem=, see /var/lib/systemd/pstore after the
-#                       next boot. Default: yes
+#   KDUMP_RAMOOPS       yes: keep the kernel log in 2 MiB of RAM, reserved with
+#                       reserve_mem=. Read it in /var/lib/systemd/pstore after
+#                       the next boot. Default: yes
 #
 # Only boards that boot through armbianEnv.txt get crashkernel= and the ramoops
-# arguments automatically; elsewhere add them to the kernel command line by hand.
+# arguments automatically. Elsewhere, add them to the kernel command line by hand.
 #
-# ramoops keeps the console output in RAM, so it survives a watchdog reset of
-# a hung board, where no dump is written. The record holds just what passes the
-# console loglevel: next to nothing at loglevel=1. On a panic the crash kernel
-# starts before pstore writes its record; the panic log is in the dump instead.
+# ramoops keeps the console output in RAM. The record survives a watchdog reset
+# of a hung board, which writes no dump. The record holds just what passes the
+# console loglevel: next to nothing at loglevel=1. On a panic, the crash kernel
+# starts before pstore writes its record. The panic log is in the dump instead.
 #
-# The crash kernel command line is built on the board each time kdump-tools
-# loads it: the running command line without what a crash kernel must not
-# repeat (crashkernel=, ramoops, kgdboc=, splash, display consoles), plus a
-# single CPU, a serial earlycon and no CMA.
+# kdump-tools builds the crash kernel command line on the board each time it
+# loads the crash kernel. It starts from the running command line. It drops the
+# arguments that a crash kernel must not repeat, such as crashkernel=, ramoops,
+# kgdboc= and splash. Then it adds a single CPU, a serial earlycon and no CMA.
 #
 # Limits:
-# - On boards whose PMIC sits behind a slow bus (RK8xx over I2C) the panicking
-#   kernel may hang before kexec; see the "genirq/kexec" patch on LKML.
+# - On boards with the PMIC on a slow bus (RK8xx over I2C), the panicking
+#   kernel can hang before kexec. See the "genirq/kexec" patch on LKML.
 # - After a PCIe link failure the panicking kernel may hang while it masks the
 #   root port's MSI.
 # - A hardware watchdog keeps counting; the crash kernel has to start before it
 #   fires.
 # - makedumpfile from the distribution may not know a newer kernel; it still
 #   writes a dump, with a warning.
-# - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM, so
-#   kdump-tools loads no crash kernel on such a board.
+# - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM. On such
+#   a board, kdump-tools loads no crash kernel.
 # - ramoops needs reserve_mem=, which Linux has from 6.11 on.
 # - Not on armhf: Debian's kdump-config takes the running kernel as the crash
-#   kernel only with CONFIG_RELOCATABLE=y, and 32-bit ARM has no such option.
+#   kernel only with CONFIG_RELOCATABLE=y. 32-bit ARM has no such option.
 
 function extension_prepare_config__kdump() {
 	case "${ARCH}" in
@@ -80,8 +80,8 @@ function custom_kernel_config__kdump() {
 	opts_y+=("KEXEC" "KEXEC_FILE" "CRASH_DUMP" "PROC_VMCORE" "PROC_KCORE" "KALLSYMS_ALL")
 	# kdump-config loads the running kernel as the crash kernel only if it is relocatable.
 	opts_y+=("RELOCATABLE")
-	# Build these in whatever KDUMP_RAMOOPS says: the kernel artifact must not depend on
-	# it, and without a device tree node nothing loads a ramoops module.
+	# Build these regardless of KDUMP_RAMOOPS. The kernel artifact must not depend on it.
+	# Without a device tree node, nothing loads a ramoops module.
 	opts_y+=("PSTORE" "PSTORE_RAM" "PSTORE_CONSOLE")
 	display_alert "${EXTENSION}: kernel" "kexec, crash dump, /proc/vmcore, ramoops" "info"
 }
@@ -114,8 +114,8 @@ function post_customize_image__kdump_tools_config() {
 
 	cat <<- 'EOF' > "${SDCARD}/usr/lib/armbian/kdump-kexec-args"
 		#!/bin/sh
-		# SM1 device trees number the cores 0-3, the hardware reports MPIDR 0x000-0x300:
-		# a crash kernel started on core 1-3 would not find its own CPU node.
+		# SM1 device trees number the cores 0-3, but the hardware reports MPIDR 0x000-0x300.
+		# A crash kernel started on core 1-3 does not find its own CPU node.
 		tr '\0' '\n' < /proc/device-tree/compatible 2> /dev/null | grep -qx 'amlogic,sm1' || exit 0
 		dtb=/var/lib/kdump/crash.dtb
 		cp /sys/firmware/fdt "${dtb}" || exit 0
@@ -127,8 +127,8 @@ function post_customize_image__kdump_tools_config() {
 	chmod 755 "${SDCARD}/usr/lib/armbian/kdump-cmdline" "${SDCARD}/usr/lib/armbian/kdump-kexec-args"
 
 	declare kdump_append="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 earlycon cma=0 loglevel=7 panic=10"
-	# Debian adds irqpoll everywhere except arm64. We leave out its usbcore.nousb:
-	# a crash kernel without USB cannot write the dump to a root file system on USB.
+	# Debian adds irqpoll everywhere except arm64. We leave out its usbcore.nousb.
+	# A crash kernel without USB cannot write the dump to a root file system on USB.
 	if [[ "${ARCH}" != "arm64" ]]; then
 		kdump_append+=" irqpoll"
 	fi
@@ -154,8 +154,8 @@ function post_customize_image__kdump_tools_config() {
 	EOF
 
 	if [[ "${KDUMP_RAMOOPS}" == "yes" ]]; then
-		# systemd-pstore saves the console record under the same name every time;
-		# date the previous one so the next boot does not overwrite it.
+		# systemd-pstore saves the console record under the same name every time.
+		# Add a date to the previous record, so the next boot keeps it.
 		mkdir -p "${SDCARD}/etc/systemd/system/systemd-pstore.service.d"
 		cat <<- 'EOF' > "${SDCARD}/etc/systemd/system/systemd-pstore.service.d/armbian-kdump.conf"
 			[Service]
