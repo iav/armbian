@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @description Makes kdump work out of the box: builds the kernel with kexec and crash dump support, installs `kdump-tools`, `kexec-tools` and `makedumpfile`, reserves memory with `crashkernel=` in `armbianEnv.txt` and configures kdump-tools so a panic leaves a compressed vmcore in `/var/crash`; keeps the kernel log of a panic, and the console output before a watchdog reset, in RAM (ramoops). Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
+# @description Makes kdump work out of the box: builds the kernel with kexec and crash dump support, installs `kdump-tools`, `kexec-tools` and `makedumpfile`, reserves memory with `crashkernel=` in `armbianEnv.txt` and configures kdump-tools so a panic leaves a compressed vmcore in `/var/crash`; keeps the console output before a watchdog reset in RAM (ramoops), while the log of a panic goes into the dump. Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
 
 #
 # SPDX-License-Identifier: GPL-2.0
@@ -18,9 +18,10 @@
 # Only boards that boot through armbianEnv.txt get crashkernel= and the ramoops
 # arguments automatically; elsewhere add them to the kernel command line by hand.
 #
-# ramoops keeps the whole kernel log on a panic or an oops. Without one, as
-# when the watchdog resets a hung board, only the console record survives, and
-# it holds just what passes the console loglevel: next to nothing at loglevel=1.
+# ramoops keeps the console output in RAM, so it survives a watchdog reset of
+# a hung board, where no dump is written. The record holds just what passes the
+# console loglevel: next to nothing at loglevel=1. On a panic the crash kernel
+# starts before pstore writes its record; the panic log is in the dump instead.
 #
 # The crash kernel command line is built on the board each time kdump-tools
 # loads it: the running command line without what a crash kernel must not
@@ -39,10 +40,13 @@
 # - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM, so
 #   kdump-tools loads no crash kernel on such a board.
 # - ramoops needs reserve_mem=, which Linux has from 6.11 on.
+# - Not on armhf: Debian's kdump-config takes the running kernel as the crash
+#   kernel only with CONFIG_RELOCATABLE=y, and 32-bit ARM has no such option.
 
 function extension_prepare_config__kdump() {
 	case "${ARCH}" in
-		arm64 | armhf | amd64) ;;
+		arm64 | amd64) ;;
+		armhf) exit_with_error "${EXTENSION}: not supported on armhf" "Debian's kdump-config needs CONFIG_RELOCATABLE, which 32-bit ARM has not" ;;
 		*) exit_with_error "${EXTENSION}: Debian has no kdump-tools package for ${ARCH}" "${BOARD}" ;;
 	esac
 	declare -g KDUMP_CRASHKERNEL="${KDUMP_CRASHKERNEL:-1G-2G:256M,2G-:512M}"
