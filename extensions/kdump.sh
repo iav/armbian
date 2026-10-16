@@ -124,7 +124,17 @@ function post_customize_image__kdump_tools_config() {
 		done
 		echo "--dtb=${dtb}"
 	EOF
-	chmod 755 "${SDCARD}/usr/lib/armbian/kdump-cmdline" "${SDCARD}/usr/lib/armbian/kdump-kexec-args"
+	cat <<- 'EOF' > "${SDCARD}/usr/lib/armbian/kdump-save"
+		#!/bin/sh
+		# Save the dump, then reboot with SysRq b: it reboots at once, without systemd and device shutdown.
+		# If saving hangs, reboot after 10 minutes anyway.
+		[ -s /proc/vmcore ] || exit 0
+		(sleep 600 && echo b > /proc/sysrq-trigger) &
+		/usr/sbin/kdump-config savecore
+		sync
+		echo b > /proc/sysrq-trigger
+	EOF
+	chmod 755 "${SDCARD}/usr/lib/armbian/kdump-cmdline" "${SDCARD}/usr/lib/armbian/kdump-kexec-args" "${SDCARD}/usr/lib/armbian/kdump-save"
 
 	declare kdump_append="reset_devices systemd.unit=kdump-tools-dump.service nr_cpus=1 earlycon cma=0 loglevel=7 panic=10"
 	# Debian adds irqpoll everywhere except arm64. We leave out its usbcore.nousb.
@@ -138,7 +148,6 @@ function post_customize_image__kdump_tools_config() {
 		# Armbian kdump extension
 		USE_KDUMP=1
 		KDUMP_COREDIR="/var/crash"
-		KDUMP_FAIL_CMD="reboot -f"
 		MAKEDUMP_ARGS="-c -d 31"
 		KDUMP_CMDLINE="$(/usr/lib/armbian/kdump-cmdline)"
 		KDUMP_KEXEC_ARGS="$(/usr/lib/armbian/kdump-kexec-args)"
@@ -146,11 +155,10 @@ function post_customize_image__kdump_tools_config() {
 	echo "KDUMP_CMDLINE_APPEND=\"${kdump_append}\"" >> "${SDCARD}/etc/default/kdump-tools"
 
 	cat <<- 'EOF' > "${SDCARD}/etc/systemd/system/kdump-tools-dump.service.d/armbian.conf"
-		[Unit]
-		FailureAction=reboot-force
-
 		[Service]
-		TimeoutStartSec=300
+		ExecStart=
+		ExecStart=/usr/lib/armbian/kdump-save
+		TimeoutStartSec=infinity
 	EOF
 
 	if [[ "${KDUMP_RAMOOPS}" == "yes" ]]; then
