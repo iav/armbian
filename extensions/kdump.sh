@@ -48,6 +48,8 @@
 # - ramoops needs reserve_mem=, which Linux has from 6.11 on.
 # - Not on armhf: Debian's kdump-config takes the running kernel as the crash
 #   kernel only with CONFIG_RELOCATABLE=y. 32-bit ARM has no such option.
+# - Not on bookworm: the kernel hook of its kdump-tools 1.8.1 runs mkinitramfs
+#   in the build chroot with no chroot check. Trixie's 1.10.7 skips it there.
 
 function extension_prepare_config__kdump() {
 	case "${ARCH}" in
@@ -55,6 +57,9 @@ function extension_prepare_config__kdump() {
 		armhf) exit_with_error "${EXTENSION}: not supported on armhf" "Debian's kdump-config needs CONFIG_RELOCATABLE, which 32-bit ARM has not" ;;
 		*) exit_with_error "${EXTENSION}: Debian has no kdump-tools package for ${ARCH}" "${BOARD}" ;;
 	esac
+	if [[ "${RELEASE}" == "bookworm" ]]; then
+		exit_with_error "${EXTENSION}: not supported on bookworm" "the kernel hook of its kdump-tools 1.8.1 runs mkinitramfs in the build chroot and fails the build on an error"
+	fi
 	declare -g KDUMP_CRASHKERNEL="${KDUMP_CRASHKERNEL:-1G-2G:256M,2G-:512M}"
 	if [[ -z "${KDUMP_CRASHKERNEL}" || "${KDUMP_CRASHKERNEL}" =~ [[:space:]] ]]; then
 		exit_with_error "${EXTENSION}: KDUMP_CRASHKERNEL must be a single crashkernel= value" "'${KDUMP_CRASHKERNEL}'"
