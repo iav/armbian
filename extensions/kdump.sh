@@ -14,6 +14,8 @@
 #   KDUMP_RAMOOPS       yes: keep the kernel log in 2 MiB of RAM, reserved with
 #                       reserve_mem=. Read it in /var/lib/systemd/pstore after
 #                       the next boot. Default: yes
+#   KDUMP_COMPRESS      yes: compress the dump. On an ODROID-HC4 that makes it
+#                       4 times smaller and a few seconds slower. Default: yes
 #
 # Only boards that boot through armbianEnv.txt get crashkernel= and the ramoops
 # arguments automatically. Elsewhere, add them to the kernel command line by hand.
@@ -63,6 +65,11 @@ function extension_prepare_config__kdump() {
 		yes) KDUMP_KERNEL_ARGS+=" reserve_mem=2M:4096:ramoops ramoops.mem_name=ramoops ramoops.console_size=1048576 ramoops.record_size=131072" ;;
 		no) ;;
 		*) exit_with_error "${EXTENSION}: KDUMP_RAMOOPS must be yes or no" "'${KDUMP_RAMOOPS}'" ;;
+	esac
+	declare -g KDUMP_COMPRESS="${KDUMP_COMPRESS:-yes}"
+	case "${KDUMP_COMPRESS}" in
+		yes | no) ;;
+		*) exit_with_error "${EXTENSION}: KDUMP_COMPRESS must be yes or no" "'${KDUMP_COMPRESS}'" ;;
 	esac
 	if [[ "${SRC_EXTLINUX}" == "yes" ]]; then
 		display_alert "${EXTENSION}: extlinux boot" "add '${KDUMP_KERNEL_ARGS}' to the kernel command line by hand" "wrn"
@@ -148,10 +155,14 @@ function post_customize_image__kdump_tools_config() {
 		# Armbian kdump extension
 		USE_KDUMP=1
 		KDUMP_COREDIR="/var/crash"
-		MAKEDUMP_ARGS="-c -d 31"
 		KDUMP_CMDLINE="$(/usr/lib/armbian/kdump-cmdline)"
 		KDUMP_KEXEC_ARGS="$(/usr/lib/armbian/kdump-kexec-args)"
 	EOF
+	declare makedump_args="-d 31"
+	if [[ "${KDUMP_COMPRESS}" == "yes" ]]; then
+		makedump_args="-c ${makedump_args}"
+	fi
+	echo "MAKEDUMP_ARGS=\"${makedump_args}\"" >> "${SDCARD}/etc/default/kdump-tools"
 	echo "KDUMP_CMDLINE_APPEND=\"${kdump_append}\"" >> "${SDCARD}/etc/default/kdump-tools"
 
 	cat <<- 'EOF' > "${SDCARD}/etc/systemd/system/kdump-tools-dump.service.d/armbian.conf"
