@@ -16,6 +16,9 @@
 #                       the next boot. Default: yes
 #   KDUMP_COMPRESS      yes: compress the dump. On an ODROID-HC4 that makes it
 #                       4 times smaller and a few seconds slower. Default: yes
+#   KDUMP_MAKEDUMPFILE  static: replace the distribution's makedumpfile with a
+#                       static 1.7.9 build, downloaded and checked by sha256.
+#                       distro: keep the distribution's one. Default: static
 #
 # Only boards that boot through armbianEnv.txt get crashkernel= and the ramoops
 # arguments automatically. Elsewhere, add them to the kernel command line by hand.
@@ -38,7 +41,8 @@
 # - A hardware watchdog keeps counting; the crash kernel has to start before it
 #   fires.
 # - makedumpfile 1.7.6 from Debian 13 finds no free pages on Linux 7.3; 1.7.9
-#   does. With 1.7.6 an ODROID-HC4 writes a 2.8 GB dump in 280 s.
+#   does. With 1.7.6 an ODROID-HC4 writes a 2.8 GB dump in 280 s. The static
+#   build comes from a release of the iav/armbian fork.
 # - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM. On such
 #   a board, kdump-tools loads no crash kernel.
 # - ramoops needs reserve_mem=, which Linux has from 6.11 on.
@@ -70,6 +74,11 @@ function extension_prepare_config__kdump() {
 	case "${KDUMP_COMPRESS}" in
 		yes | no) ;;
 		*) exit_with_error "${EXTENSION}: KDUMP_COMPRESS must be yes or no" "'${KDUMP_COMPRESS}'" ;;
+	esac
+	declare -g KDUMP_MAKEDUMPFILE="${KDUMP_MAKEDUMPFILE:-static}"
+	case "${KDUMP_MAKEDUMPFILE}" in
+		static | distro) ;;
+		*) exit_with_error "${EXTENSION}: KDUMP_MAKEDUMPFILE must be static or distro" "'${KDUMP_MAKEDUMPFILE}'" ;;
 	esac
 	if [[ "${SRC_EXTLINUX}" == "yes" ]]; then
 		display_alert "${EXTENSION}: extlinux boot" "add '${KDUMP_KERNEL_ARGS}' to the kernel command line by hand" "wrn"
@@ -184,4 +193,23 @@ function post_customize_image__kdump_tools_config() {
 	fi
 
 	chroot_sdcard systemctl enable kdump-tools.service
+}
+
+function post_customize_image__kdump_makedumpfile() {
+	[[ "${KDUMP_MAKEDUMPFILE}" == "static" ]] || return 0
+	declare -A sha256=(
+		[arm64]=31ee4bc0a076a647235034e2ddddaf856259f62b77ac3b02259c3f2355755299
+		[amd64]=2135103dee3db796555afbdd0ac810c31608127dca71a9356461713085fbacf4
+	)
+	declare url="https://github.com/iav/armbian/releases/download/makedumpfile-1.7.9-static/makedumpfile-1.7.9-static-${ARCH}"
+	declare file="${SDCARD}/tmp/makedumpfile-static"
+	display_alert "${EXTENSION}: static makedumpfile 1.7.9" "${url}" "info"
+	run_host_command_logged curl --max-time 120 -fsSL -o "${file}" "${url}"
+	if ! echo "${sha256[${ARCH}]}  ${file}" | sha256sum --check --status; then
+		exit_with_error "${EXTENSION}: makedumpfile checksum mismatch" "${url}"
+	fi
+	# kdump-config runs with PATH=/bin:/usr/bin:/sbin:/usr/sbin, so take the distribution's path.
+	chroot_sdcard dpkg-divert --local --rename --divert /usr/bin/makedumpfile.distrib --add /usr/bin/makedumpfile
+	install -m 755 "${file}" "${SDCARD}/usr/bin/makedumpfile"
+	rm -f "${file}"
 }
