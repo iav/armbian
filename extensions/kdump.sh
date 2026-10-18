@@ -37,8 +37,8 @@
 #   root port's MSI.
 # - A hardware watchdog keeps counting; the crash kernel has to start before it
 #   fires.
-# - makedumpfile from the distribution may not know a newer kernel; it still
-#   writes a dump, with a warning.
+# - makedumpfile 1.7.6 from Debian 13 finds no free pages on Linux 7.3; 1.7.9
+#   does. With 1.7.6 an ODROID-HC4 writes a 2.8 GB dump in 280 s.
 # - The default KDUMP_CRASHKERNEL reserves nothing below 1 GiB of RAM. On such
 #   a board, kdump-tools loads no crash kernel.
 # - ramoops needs reserve_mem=, which Linux has from 6.11 on.
@@ -129,7 +129,8 @@ function post_customize_image__kdump_tools_config() {
 		for n in 1 2 3; do
 			fdtput -t x "${dtb}" "/cpus/cpu@${n}" reg 0 "${n}00" || exit 0
 		done
-		echo "--dtb=${dtb}"
+		# kexec_file_load ignores --dtb; force kexec_load.
+		echo "-c --dtb=${dtb}"
 	EOF
 	cat <<- 'EOF' > "${SDCARD}/usr/lib/armbian/kdump-save"
 		#!/bin/sh
