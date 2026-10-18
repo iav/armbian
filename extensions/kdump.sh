@@ -122,7 +122,7 @@ function post_customize_image__kdump_tools_config() {
 		# Print the running kernel command line without what a crash kernel must not repeat.
 		for arg in $(cat /proc/cmdline); do
 			case "${arg}" in
-				crashkernel=* | crash_kexec_post_notifiers | reserve_mem=* | ramoops.* | kgdboc=* | kgdbwait | memtest=* | splash | splash=* | quiet | console=tty[0-9]*) ;;
+				crashkernel=* | hugepages=* | hugepagesz=* | abm=* | crash_kexec_post_notifiers | reserve_mem=* | ramoops.* | kgdboc=* | kgdbwait | memtest=* | splash | splash=* | quiet | console=tty[0-9]*) ;;
 				*) printf '%s ' "${arg}" ;;
 			esac
 		done
