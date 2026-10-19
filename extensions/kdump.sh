@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# @description Makes kdump work out of the box. Builds the kernel with kexec and crash dump support. Installs `kdump-tools`, `kexec-tools` and `makedumpfile`. Reserves memory with `crashkernel=` in `armbianEnv.txt`. Configures kdump-tools to save a compressed vmcore in `/var/crash` on a panic. Keeps the console output before a watchdog reset in RAM (ramoops). The panic log goes into the dump. Pair it with `KERNEL_DBG_PACKAGE=yes` to get the matching `vmlinux` for `crash` or `drgn`.
+# @description Makes kdump work out of the box. Builds the kernel with kexec and crash dump support. Installs `kdump-tools`, `kexec-tools` and `makedumpfile`. Reserves memory with `crashkernel=` in `armbianEnv.txt`. Configures kdump-tools to save a compressed vmcore in `/var/crash` on a panic. Keeps the console output before a watchdog reset in RAM (ramoops). The panic log goes into the dump.
 
 #
 # SPDX-License-Identifier: GPL-2.0
