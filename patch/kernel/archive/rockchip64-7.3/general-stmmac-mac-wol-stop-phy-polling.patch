@@ -1,0 +1,46 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Igor Velkov <iav@iav.lv>
+Date: Sun, 25 Oct 2026 04:20:00 +0200
+Subject: net: stmmac: stop PHY polling while the MAC waits for a magic packet
+
+With MAC wake-up phylink_suspend() leaves the PHY state machine
+running. On ROCK Pi 4A (RK3399, RTL8211E without interrupt) the
+machine polls the PHY over MDIO every second, and a poll that lands
+after dwmac1000_pmt() makes the MAC miss the magic packet: s2idle
+wake-up failed in about 40 % of suspends, each failure with such a
+poll (17 of 17).
+
+Cancel the state machine work before programming PMT and start it
+again after phylink_resume(). With this, 20 of 20 suspends woke on the
+magic packet and no trace showed an MDIO poll between PMT and resume.
+
+Assisted-by: LLM
+Signed-off-by: Igor Velkov <iav@iav.lv>
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -8212,6 +8212,10 @@ int stmmac_suspend(struct device *dev)
+ 	if (!ndev || !netif_running(ndev))
+ 		goto suspend_bsp;
+
++	/* With MAC wake-up an MDIO poll after PMT makes the MAC miss the magic packet */
++	if (priv->wolopts && ndev->phydev)
++		cancel_delayed_work_sync(&ndev->phydev->state_queue);
++
+ 	mutex_lock(&priv->lock);
+
+ 	netif_device_detach(ndev);
+@@ -8408,6 +8412,9 @@ int stmmac_resume(struct device *dev)
+ 	phylink_resume(priv->phylink);
+ 	rtnl_unlock();
+
++	if (priv->wolopts && ndev->phydev)
++		phy_start_machine(ndev->phydev);
++
+ 	netif_device_attach(ndev);
+
+ 	ret = 0;
