@@ -1,0 +1,54 @@
+/*
+ * ODROID-HC4: use the "boot from SD" button (SW1) as an input key.
+ *
+ * SW1 shorts BOOT_4 (eMMC_D4/NOR_D, the SPI flash SI line) to GND through
+ * R108 (10 Ohm), schematic rev1.0 sheet 7. With this overlay Linux gives up
+ * the SPI NOR: spifc is disabled and BOOT_4 becomes a GPIO input with the
+ * internal pull-up, reported as KEY_PROG1. U-Boot still boots from SPI.
+ * Without this overlay BOOT_4 drives the SPI flash: do not press SW1 while
+ * Linux runs.
+ */
+/dts-v1/;
+/plugin/;
+
+/ {
+	compatible = "hardkernel,odroid-hc4", "amlogic,sm1";
+
+	fragment@0 {
+		target = <&spifc>;
+		__overlay__ {
+			status = "disabled";
+		};
+	};
+
+	fragment@1 {
+		target = <&periphs_pinctrl>;
+		__overlay__ {
+			hc4_button_pins: hc4-button {
+				mux {
+					groups = "BOOT_4";
+					function = "gpio_periphs";
+					bias-pull-up;
+				};
+			};
+		};
+	};
+
+	fragment@2 {
+		target-path = "/";
+		__overlay__ {
+			hc4-button {
+				compatible = "gpio-keys";
+				pinctrl-names = "default";
+				pinctrl-0 = <&hc4_button_pins>;
+
+				button-sw1 {
+					label = "SW1";
+					linux,code = <148>;		/* KEY_PROG1 */
+					gpios = <&gpio 29 1>;		/* BOOT_4, GPIO_ACTIVE_LOW */
+					debounce-interval = <50>;
+				};
+			};
+		};
+	};
+};
