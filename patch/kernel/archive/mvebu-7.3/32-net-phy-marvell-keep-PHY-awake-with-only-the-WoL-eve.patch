@@ -25,11 +25,12 @@ awake, because the MAC still needs it to receive and forward packets.
 Assisted-by: LLM
 Signed-off-by: Rosen Penev <rosenp@gmail.com>
 [iav: rebased onto 7.3.6; the mask restored on resume and on a failed
- suspend is the one m88e1318_config_intr() sets, WoL event included]
+ suspend is the one m88e1318_config_intr() sets, WoL event included;
+ resume restores it even when an earlier resume step fails]
 Signed-off-by: Igor Velkov <iav@iav.lv>
 ---
- drivers/net/phy/marvell.c | 253 +++++++++-
- 1 file changed, 236 insertions(+), 17 deletions(-)
+ drivers/net/phy/marvell.c | 266 +++++++++-
+ 1 file changed, 245 insertions(+), 21 deletions(-)
 
 diff --git a/drivers/net/phy/marvell.c b/drivers/net/phy/marvell.c
 index 111111111111..222222222222 100644
@@ -149,16 +150,44 @@ index 111111111111..222222222222 100644
  /* m88e1510_resume
   *
   * The 88e1510 PHY has an erratum where the phy downshift counter is not cleared
-@@ -1992,9 +2099,50 @@ static int m88e1510_resume(struct phy_device *phydev)
+@@ -1972,29 +2079,74 @@ static int marvell_resume(struct phy_device *phydev)
+  */
+ static int m88e1510_resume(struct phy_device *phydev)
+ {
+-	int err;
++	int err, ret;
+ 	u8 cnt = 0;
+ 
+ 	err = marvell_resume(phydev);
+ 	if (err < 0)
+-		return err;
++		goto restore_intrs;
+ 
+ 	/* read downshift counter value */
+ 	err = m88e1011_get_downshift(phydev, &cnt);
+ 	if (err < 0)
+-		return err;
++		goto restore_intrs;
+ 
+ 	if (cnt) {
+ 		/* downshift disabled */
+ 		err = m88e1011_set_downshift(phydev, 0);
+ 		if (err < 0)
+-			return err;
++			goto restore_intrs;
  
  		/* downshift enabled, with previous counter value */
  		err = m88e1011_set_downshift(phydev, cnt);
-+		if (err < 0)
-+			return err;
  	}
  
 -	return err;
-+	return marvell_wol_resume_intrs(phydev);
++restore_intrs:
++	/* phy_start() carries on after a resume error, so restore the
++	 * interrupt mask even when an earlier step failed.
++	 */
++	ret = marvell_wol_resume_intrs(phydev);
++
++	return err < 0 ? err : ret;
 +}
 +
 +/* m88e1510_suspend
@@ -201,7 +230,7 @@ index 111111111111..222222222222 100644
  }
  
  static int marvell_aneg_done(struct phy_device *phydev)
-@@ -2182,6 +2330,12 @@ static int m88e1318_set_wol(struct phy_device *phydev,
+@@ -2182,6 +2334,12 @@ static int m88e1318_set_wol(struct phy_device *phydev,
  
  	if (device_can_wakeup(dev) && wol_enable != device_may_wakeup(dev)) {
  		err = device_set_wakeup_enable(dev, wol_enable);
@@ -214,7 +243,7 @@ index 111111111111..222222222222 100644
  		if (err < 0) {
  			/* Roll back the PHY WoL config if the PM state update failed */
  			struct ethtool_wolinfo wol_off = { .wolopts = 0 };
-@@ -2197,6 +2351,50 @@ static int m88e1318_set_wol(struct phy_device *phydev,
+@@ -2197,6 +2355,51 @@ static int m88e1318_set_wol(struct phy_device *phydev,
  	return err;
  }
  
@@ -255,17 +284,18 @@ index 111111111111..222222222222 100644
 +
 +static int m88e1318_resume(struct phy_device *phydev)
 +{
-+	int err = genphy_resume(phydev);
-+	if (err < 0)
-+		return err;
++	int err, ret;
 +
-+	return marvell_wol_resume_intrs(phydev);
++	err = genphy_resume(phydev);
++	ret = marvell_wol_resume_intrs(phydev);
++
++	return err < 0 ? err : ret;
 +}
 +
  static int marvell_get_sset_count(struct phy_device *phydev)
  {
  	if (linkmode_test_bit(ETHTOOL_LINK_MODE_FIBRE_BIT,
-@@ -3715,19 +3913,39 @@ static int marvell_probe(struct phy_device *phydev)
+@@ -3715,19 +3918,39 @@ static int marvell_probe(struct phy_device *phydev)
  
  	phydev->priv = priv;
  
@@ -315,7 +345,7 @@ index 111111111111..222222222222 100644
  }
  
  static int m88e1510_port_configure_serdes(struct phy_port *port, bool enable,
-@@ -3945,7 +4163,8 @@ static struct phy_driver marvell_drivers[] = {
+@@ -3945,7 +4168,8 @@ static struct phy_driver marvell_drivers[] = {
  		.phy_id_mask = MARVELL_PHY_ID_MASK,
  		.name = "Marvell 88E1318S",
  		/* PHY_GBIT_FEATURES */
@@ -325,7 +355,7 @@ index 111111111111..222222222222 100644
  		.config_init = m88e1318_config_init,
  		.config_aneg = m88e1318_config_aneg,
  		.read_status = marvell_read_status,
-@@ -3953,8 +4172,8 @@ static struct phy_driver marvell_drivers[] = {
+@@ -3953,8 +4177,8 @@ static struct phy_driver marvell_drivers[] = {
  		.handle_interrupt = m88e1318_handle_interrupt,
  		.get_wol = m88e1318_get_wol,
  		.set_wol = m88e1318_set_wol,
@@ -336,7 +366,7 @@ index 111111111111..222222222222 100644
  		.read_page = marvell_read_page,
  		.write_page = marvell_write_page,
  		.get_sset_count = marvell_get_sset_count,
-@@ -4052,8 +4271,8 @@ static struct phy_driver marvell_drivers[] = {
+@@ -4052,8 +4276,8 @@ static struct phy_driver marvell_drivers[] = {
  		.name = "Marvell 88E1510",
  		.driver_data = DEF_MARVELL_HWMON_OPS(m88e1510_hwmon_ops),
  		.features = PHY_GBIT_FIBRE_FEATURES,
@@ -347,7 +377,7 @@ index 111111111111..222222222222 100644
  		.config_init = m88e1510_config_init,
  		.config_aneg = m88e1510_config_aneg,
  		.read_status = marvell_read_status,
-@@ -4062,7 +4281,7 @@ static struct phy_driver marvell_drivers[] = {
+@@ -4062,7 +4286,7 @@ static struct phy_driver marvell_drivers[] = {
  		.get_wol = m88e1318_get_wol,
  		.set_wol = m88e1318_set_wol,
  		.resume = m88e1510_resume,
